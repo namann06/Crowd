@@ -1,0 +1,57 @@
+/* Tailwind CSS Entry Point */
+@import "tailwindcss";
+
+/* Custom Base Styles */
+@layer base {
+  body {
+    @apply bg-gray-100 text-gray-900 font-sans;
+  }
+}
+
+/* Custom Component Styles */
+@layer components {
+  /* Status badges for crowd levels */
+  .status-green {
+    @apply bg-green-100 text-green-800 border-green-500;
+  }
+  
+  .status-yellow {
+    @apply bg-yellow-100 text-yellow-800 border-yellow-500;
+  }
+  
+  .status-red {
+    @apply bg-red-100 text-red-800 border-red-500;
+  }
+
+  /* Card component */
+  .card {
+    @apply bg-white rounded-lg shadow-md p-6 border border-gray-200;
+  }
+
+  /* Button variants */
+  .btn {
+    @apply px-4 py-2 rounded-md font-medium transition-colors duration-200;
+  }
+  
+  .btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700;
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
+  }
+  
+  .btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700;
+  }
+
+  /* Input fields */
+  .input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
+  }
+
+  /* Form label */
+  .label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+  }
+}
