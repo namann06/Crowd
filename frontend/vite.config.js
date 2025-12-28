@@ -16,6 +16,7 @@ export default defineConfig({
   ],
   server: {
     port: 5173,
+    host: true, // Listen on all network interfaces (allows access from other devices)
     // Proxy API calls to Spring Boot backend
     proxy: {
       '/api': {

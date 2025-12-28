@@ -134,8 +134,11 @@ function Areas() {
   }
 
   // Generate QR code URL (we'll use a simple service)
+  // Use network IP so QR codes work when scanned from other devices
   const getQRCodeUrl = (areaId, type) => {
-    const scanUrl = `${window.location.origin}/scan/${areaId}/${type}`
+    // Use the current host - when accessed via IP, QR will have that IP
+    const baseUrl = window.location.origin
+    const scanUrl = `${baseUrl}/scan/${areaId}/${type}`
     return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(scanUrl)}`
   }
 
