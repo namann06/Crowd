@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import scanService from '../services/scanService'
 import areaService from '../services/areaService'
@@ -21,9 +21,18 @@ function ScanPage() {
   const [status, setStatus] = useState('processing') // processing, success, error
   const [area, setArea] = useState(null)
   const [message, setMessage] = useState('')
+  
+  // Ref to prevent duplicate processing (React StrictMode runs useEffect twice)
+  const hasProcessed = useRef(false)
 
   useEffect(() => {
     const processScan = async () => {
+      // Prevent duplicate processing
+      if (hasProcessed.current) {
+        return
+      }
+      hasProcessed.current = true
+      
       try {
         // Validate type
         if (type !== 'entry' && type !== 'exit') {
