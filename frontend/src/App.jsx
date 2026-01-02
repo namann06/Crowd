@@ -18,14 +18,26 @@ import ScanPage from './pages/ScanPage'
  * Handles authentication state and protected routes.
  */
 function App() {
-  // Simple auth state (stored in localStorage)
+  // Auth state (stored in localStorage)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
   // Check if user is logged in on app load
   useEffect(() => {
     const authStatus = localStorage.getItem('isAuthenticated')
-    setIsAuthenticated(authStatus === 'true')
+    const userEmail = localStorage.getItem('userEmail')
+    const userName = localStorage.getItem('userName')
+    const authProvider = localStorage.getItem('authProvider')
+    
+    if (authStatus === 'true') {
+      setIsAuthenticated(true)
+      setUser({
+        email: userEmail,
+        name: userName || userEmail || 'Admin',
+        provider: authProvider || 'local'
+      })
+    }
     setLoading(false)
   }, [])
 
@@ -33,12 +45,29 @@ function App() {
   const handleLogin = () => {
     localStorage.setItem('isAuthenticated', 'true')
     setIsAuthenticated(true)
+    
+    // Force re-read user info from localStorage (set by Login page)
+    const userEmail = localStorage.getItem('userEmail')
+    const userName = localStorage.getItem('userName')
+    const authProvider = localStorage.getItem('authProvider')
+    
+    console.log('handleLogin - User data from localStorage:', { userEmail, userName, authProvider })
+    
+    setUser({
+      email: userEmail,
+      name: userName || userEmail || 'Admin',
+      provider: authProvider || 'local'
+    })
   }
 
   // Logout handler
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated')
+    localStorage.removeItem('userEmail')
+    localStorage.removeItem('userName')
+    localStorage.removeItem('authProvider')
     setIsAuthenticated(false)
+    setUser(null)
   }
 
   // Show loading while checking auth
@@ -56,11 +85,7 @@ function App() {
         {/* Public Route - Login */}
         <Route 
           path="/login" 
-          element={
-            isAuthenticated ? 
-              <Navigate to="/dashboard" replace /> : 
-              <Login onLogin={handleLogin} />
-          } 
+          element={<Login onLogin={handleLogin} />} 
         />
 
         {/* Public Route - QR Scan Page */}
@@ -71,7 +96,7 @@ function App() {
           path="/" 
           element={
             isAuthenticated ? 
-              <Layout onLogout={handleLogout} /> : 
+              <Layout onLogout={handleLogout} user={user} /> : 
               <Navigate to="/login" replace />
           }
         >

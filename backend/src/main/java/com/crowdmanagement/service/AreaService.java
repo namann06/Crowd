@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * Area Service
  * ------------
  * Business logic for area management.
- * Handles CRUD operations and count updates.
+ * Multi-tenant: All operations are scoped to the owner's email.
  */
 @Service
 public class AreaService {
@@ -24,23 +24,36 @@ public class AreaService {
     private AreaRepository areaRepository;
 
     /**
-     * Get all areas
+     * Get all areas for a specific owner
+     * @param ownerEmail Owner's email
      * @return List of all areas with status
      */
-    public List<AreaResponse> getAllAreas() {
-        return areaRepository.findAllByOrderByNameAsc()
+    public List<AreaResponse> getAllAreas(String ownerEmail) {
+        return areaRepository.findByOwnerEmailOrderByNameAsc(ownerEmail)
                 .stream()
                 .map(AreaResponse::fromEntity)
                 .collect(Collectors.toList());
     }
 
     /**
-     * Get area by ID
+     * Get area by ID (must belong to owner)
+     * @param id Area ID
+     * @param ownerEmail Owner's email
+     * @return Area details
+     * @throws RuntimeException if not found or not owned
+     */
+    public AreaResponse getAreaById(Long id, String ownerEmail) {
+        Area area = areaRepository.findByIdAndOwnerEmail(id, ownerEmail)
+                .orElseThrow(() -> new RuntimeException("Area not found with id: " + id));
+        return AreaResponse.fromEntity(area);
+    }
+
+    /**
+     * Get area by ID (for public access - QR scanning)
      * @param id Area ID
      * @return Area details
-     * @throws RuntimeException if not found
      */
-    public AreaResponse getAreaById(Long id) {
+    public AreaResponse getAreaByIdPublic(Long id) {
         Area area = areaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Area not found with id: " + id));
         return AreaResponse.fromEntity(area);
@@ -55,13 +68,14 @@ public class AreaService {
     }
 
     /**
-     * Create a new area
+     * Create a new area for a specific owner
      * @param request Area data
+     * @param ownerEmail Owner's email
      * @return Created area
      */
-    public AreaResponse createArea(AreaRequest request) {
-        // Check if name already exists
-        if (areaRepository.existsByName(request.getName())) {
+    public AreaResponse createArea(AreaRequest request, String ownerEmail) {
+        // Check if name already exists for this owner
+        if (areaRepository.existsByNameAndOwnerEmail(request.getName(), ownerEmail)) {
             throw new RuntimeException("Area with name '" + request.getName() + "' already exists");
         }
 
@@ -72,6 +86,7 @@ public class AreaService {
 
         Area area = new Area();
         area.setName(request.getName());
+        area.setOwnerEmail(ownerEmail);
         area.setCapacity(request.getCapacity());
         area.setThreshold(request.getThreshold());
         area.setCurrentCount(0);
@@ -81,18 +96,19 @@ public class AreaService {
     }
 
     /**
-     * Update an existing area
+     * Update an existing area (must belong to owner)
      * @param id Area ID
      * @param request Updated data
+     * @param ownerEmail Owner's email
      * @return Updated area
      */
-    public AreaResponse updateArea(Long id, AreaRequest request) {
-        Area area = areaRepository.findById(id)
+    public AreaResponse updateArea(Long id, AreaRequest request, String ownerEmail) {
+        Area area = areaRepository.findByIdAndOwnerEmail(id, ownerEmail)
                 .orElseThrow(() -> new RuntimeException("Area not found with id: " + id));
 
-        // Check if new name conflicts with another area
+        // Check if new name conflicts with another area for this owner
         if (!area.getName().equals(request.getName()) && 
-            areaRepository.existsByName(request.getName())) {
+            areaRepository.existsByNameAndOwnerEmail(request.getName(), ownerEmail)) {
             throw new RuntimeException("Area with name '" + request.getName() + "' already exists");
         }
 
@@ -110,18 +126,18 @@ public class AreaService {
     }
 
     /**
-     * Delete an area
+     * Delete an area (must belong to owner)
      * @param id Area ID
+     * @param ownerEmail Owner's email
      */
-    public void deleteArea(Long id) {
-        if (!areaRepository.existsById(id)) {
-            throw new RuntimeException("Area not found with id: " + id);
-        }
-        areaRepository.deleteById(id);
+    public void deleteArea(Long id, String ownerEmail) {
+        Area area = areaRepository.findByIdAndOwnerEmail(id, ownerEmail)
+                .orElseThrow(() -> new RuntimeException("Area not found with id: " + id));
+        areaRepository.delete(area);
     }
 
     /**
-     * Increment area count (for entry scan)
+     * Increment area count (for entry scan - public access)
      * @param id Area ID
      * @return Updated count
      */
@@ -133,7 +149,7 @@ public class AreaService {
     }
 
     /**
-     * Decrement area count (for exit scan)
+     * Decrement area count (for exit scan - public access)
      * @param id Area ID
      * @return Updated count
      */
@@ -145,20 +161,24 @@ public class AreaService {
     }
 
     /**
-     * Reset area count to zero
+     * Reset area count to zero (must belong to owner)
      * @param id Area ID
+     * @param ownerEmail Owner's email
      */
     @Transactional
-    public void resetCount(Long id) {
+    public void resetCount(Long id, String ownerEmail) {
+        Area area = areaRepository.findByIdAndOwnerEmail(id, ownerEmail)
+                .orElseThrow(() -> new RuntimeException("Area not found with id: " + id));
         areaRepository.resetCount(id);
     }
 
     /**
-     * Get areas that need attention (at threshold or above)
+     * Get areas that need attention for a specific owner
+     * @param ownerEmail Owner's email
      * @return List of areas needing attention
      */
-    public List<AreaResponse> getAreasNeedingAttention() {
-        return areaRepository.findAreasNeedingAttention()
+    public List<AreaResponse> getAreasNeedingAttention(String ownerEmail) {
+        return areaRepository.findAreasNeedingAttentionByOwner(ownerEmail)
                 .stream()
                 .map(AreaResponse::fromEntity)
                 .collect(Collectors.toList());

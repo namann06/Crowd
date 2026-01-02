@@ -14,16 +14,17 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,  // Send cookies with requests for session auth
 })
 
 // Request interceptor (for adding auth headers if needed)
 api.interceptors.request.use(
   (config) => {
-    // You can add auth token here if implementing JWT
-    // const token = localStorage.getItem('token')
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`
-    // }
+    // Add user email header for multi-tenant API calls
+    const userEmail = localStorage.getItem('userEmail')
+    if (userEmail) {
+      config.headers['X-User-Email'] = userEmail
+    }
     return config
   },
   (error) => {

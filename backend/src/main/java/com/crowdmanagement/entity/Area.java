@@ -11,9 +11,12 @@ import java.time.LocalDateTime;
  * Area Entity
  * -----------
  * Represents a monitored area/zone in the venue.
+ * Multi-tenant: Each area belongs to a specific user (owner).
  */
 @Entity
-@Table(name = "areas")
+@Table(name = "areas", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"name", "owner_email"})
+})
 public class Area {
 
     @Id
@@ -22,8 +25,12 @@ public class Area {
 
     @NotBlank(message = "Area name is required")
     @Size(min = 2, max = 100, message = "Area name must be between 2 and 100 characters")
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(nullable = false, length = 100)
     private String name;
+
+    @NotBlank(message = "Owner email is required")
+    @Column(name = "owner_email", nullable = false, length = 100)
+    private String ownerEmail;
 
     @Min(value = 1, message = "Capacity must be at least 1")
     @Column(nullable = false)
@@ -45,10 +52,11 @@ public class Area {
 
     public Area() {}
 
-    public Area(Long id, String name, Integer capacity, Integer threshold, 
+    public Area(Long id, String name, String ownerEmail, Integer capacity, Integer threshold, 
                 Integer currentCount, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.id = id;
         this.name = name;
+        this.ownerEmail = ownerEmail;
         this.capacity = capacity;
         this.threshold = threshold;
         this.currentCount = currentCount;
@@ -88,6 +96,8 @@ public class Area {
     public void setId(Long id) { this.id = id; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+    public String getOwnerEmail() { return ownerEmail; }
+    public void setOwnerEmail(String ownerEmail) { this.ownerEmail = ownerEmail; }
     public Integer getCapacity() { return capacity; }
     public void setCapacity(Integer capacity) { this.capacity = capacity; }
     public Integer getThreshold() { return threshold; }

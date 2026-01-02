@@ -17,9 +17,10 @@ import java.util.Map;
  * Area Controller
  * ---------------
  * REST API for area management.
+ * Multi-tenant: Uses X-User-Email header to identify the owner.
  * 
  * Endpoints:
- * GET    /api/areas           - Get all areas
+ * GET    /api/areas           - Get all areas for current user
  * GET    /api/areas/{id}      - Get area by ID
  * POST   /api/areas           - Create new area
  * PUT    /api/areas/{id}      - Update area
@@ -35,24 +36,36 @@ public class AreaController {
     private AreaService areaService;
 
     /**
-     * Get all areas
+     * Get all areas for the current user
+     * @param ownerEmail User's email from header
      * @return List of all areas with status
      */
     @GetMapping
-    public ResponseEntity<List<AreaResponse>> getAllAreas() {
-        List<AreaResponse> areas = areaService.getAllAreas();
+    public ResponseEntity<?> getAllAreas(@RequestHeader(value = "X-User-Email", required = false) String ownerEmail) {
+        if (ownerEmail == null || ownerEmail.isEmpty()) {
+            return ResponseEntity.badRequest().body(errorResponse("X-User-Email header is required"));
+        }
+        List<AreaResponse> areas = areaService.getAllAreas(ownerEmail);
         return ResponseEntity.ok(areas);
     }
 
     /**
      * Get area by ID
      * @param id Area ID
+     * @param ownerEmail User's email from header
      * @return Area details
      */
     @GetMapping("/{id}")
-    public ResponseEntity<AreaResponse> getAreaById(@PathVariable Long id) {
+    public ResponseEntity<?> getAreaById(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-User-Email", required = false) String ownerEmail) {
         try {
-            AreaResponse area = areaService.getAreaById(id);
+            // If no owner email, use public access (for QR scanning)
+            if (ownerEmail == null || ownerEmail.isEmpty()) {
+                AreaResponse area = areaService.getAreaByIdPublic(id);
+                return ResponseEntity.ok(area);
+            }
+            AreaResponse area = areaService.getAreaById(id, ownerEmail);
             return ResponseEntity.ok(area);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
@@ -62,12 +75,18 @@ public class AreaController {
     /**
      * Create a new area
      * @param request Area data
+     * @param ownerEmail User's email from header
      * @return Created area
      */
     @PostMapping
-    public ResponseEntity<?> createArea(@Valid @RequestBody AreaRequest request) {
+    public ResponseEntity<?> createArea(
+            @Valid @RequestBody AreaRequest request,
+            @RequestHeader(value = "X-User-Email", required = false) String ownerEmail) {
+        if (ownerEmail == null || ownerEmail.isEmpty()) {
+            return ResponseEntity.badRequest().body(errorResponse("X-User-Email header is required"));
+        }
         try {
-            AreaResponse area = areaService.createArea(request);
+            AreaResponse area = areaService.createArea(request, ownerEmail);
             return ResponseEntity.status(HttpStatus.CREATED).body(area);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(errorResponse(e.getMessage()));
@@ -78,12 +97,19 @@ public class AreaController {
      * Update an existing area
      * @param id Area ID
      * @param request Updated data
+     * @param ownerEmail User's email from header
      * @return Updated area
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateArea(@PathVariable Long id, @Valid @RequestBody AreaRequest request) {
+    public ResponseEntity<?> updateArea(
+            @PathVariable Long id, 
+            @Valid @RequestBody AreaRequest request,
+            @RequestHeader(value = "X-User-Email", required = false) String ownerEmail) {
+        if (ownerEmail == null || ownerEmail.isEmpty()) {
+            return ResponseEntity.badRequest().body(errorResponse("X-User-Email header is required"));
+        }
         try {
-            AreaResponse area = areaService.updateArea(id, request);
+            AreaResponse area = areaService.updateArea(id, request, ownerEmail);
             return ResponseEntity.ok(area);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(errorResponse(e.getMessage()));
@@ -93,12 +119,18 @@ public class AreaController {
     /**
      * Delete an area
      * @param id Area ID
+     * @param ownerEmail User's email from header
      * @return Success message
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteArea(@PathVariable Long id) {
+    public ResponseEntity<?> deleteArea(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-User-Email", required = false) String ownerEmail) {
+        if (ownerEmail == null || ownerEmail.isEmpty()) {
+            return ResponseEntity.badRequest().body(errorResponse("X-User-Email header is required"));
+        }
         try {
-            areaService.deleteArea(id);
+            areaService.deleteArea(id, ownerEmail);
             return ResponseEntity.ok(successResponse("Area deleted successfully"));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(errorResponse(e.getMessage()));
@@ -108,12 +140,18 @@ public class AreaController {
     /**
      * Reset area count to zero
      * @param id Area ID
+     * @param ownerEmail User's email from header
      * @return Success message
      */
     @PostMapping("/{id}/reset")
-    public ResponseEntity<?> resetCount(@PathVariable Long id) {
+    public ResponseEntity<?> resetCount(
+            @PathVariable Long id,
+            @RequestHeader(value = "X-User-Email", required = false) String ownerEmail) {
+        if (ownerEmail == null || ownerEmail.isEmpty()) {
+            return ResponseEntity.badRequest().body(errorResponse("X-User-Email header is required"));
+        }
         try {
-            areaService.resetCount(id);
+            areaService.resetCount(id, ownerEmail);
             return ResponseEntity.ok(successResponse("Area count reset successfully"));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(errorResponse(e.getMessage()));
@@ -122,11 +160,16 @@ public class AreaController {
 
     /**
      * Get areas needing attention (at or above threshold)
+     * @param ownerEmail User's email from header
      * @return List of areas needing attention
      */
     @GetMapping("/attention")
-    public ResponseEntity<List<AreaResponse>> getAreasNeedingAttention() {
-        List<AreaResponse> areas = areaService.getAreasNeedingAttention();
+    public ResponseEntity<?> getAreasNeedingAttention(
+            @RequestHeader(value = "X-User-Email", required = false) String ownerEmail) {
+        if (ownerEmail == null || ownerEmail.isEmpty()) {
+            return ResponseEntity.badRequest().body(errorResponse("X-User-Email header is required"));
+        }
+        List<AreaResponse> areas = areaService.getAreasNeedingAttention(ownerEmail);
         return ResponseEntity.ok(areas);
     }
 

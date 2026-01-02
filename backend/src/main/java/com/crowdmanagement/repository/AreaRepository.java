@@ -14,49 +14,57 @@ import java.util.Optional;
  * Area Repository
  * ---------------
  * Provides database operations for Area entity.
- * Includes custom queries for crowd management operations.
+ * Multi-tenant: Most queries filter by owner email.
  */
 @Repository
 public interface AreaRepository extends JpaRepository<Area, Long> {
 
     /**
-     * Find an area by its name
-     * 
-     * @param name The area name
-     * @return Optional containing the area if found
+     * Find all areas for a specific owner, ordered by name
+     */
+    List<Area> findByOwnerEmailOrderByNameAsc(String ownerEmail);
+
+    /**
+     * Find an area by its name and owner
+     */
+    Optional<Area> findByNameAndOwnerEmail(String name, String ownerEmail);
+
+    /**
+     * Check if an area exists with the given name for a specific owner
+     */
+    boolean existsByNameAndOwnerEmail(String name, String ownerEmail);
+
+    /**
+     * Find area by ID and owner (for security - ensures user can only access their own areas)
+     */
+    Optional<Area> findByIdAndOwnerEmail(Long id, String ownerEmail);
+
+    /**
+     * Find an area by its name (legacy - for QR scanning which doesn't require auth)
      */
     Optional<Area> findByName(String name);
 
     /**
-     * Check if an area exists with the given name
-     * 
-     * @param name The area name to check
-     * @return true if exists, false otherwise
+     * Check if an area exists with the given name (legacy)
      */
     boolean existsByName(String name);
 
     /**
-     * Find all areas ordered by name
-     * 
-     * @return List of areas sorted by name
+     * Find all areas ordered by name (legacy - for admin purposes)
      */
     List<Area> findAllByOrderByNameAsc();
 
     /**
-     * Find areas where current count is at or above threshold (WARNING or CRITICAL)
-     * 
-     * @return List of areas that need attention
+     * Find areas where current count is at or above threshold for a specific owner
      */
-    @Query("SELECT a FROM Area a WHERE a.currentCount >= a.threshold")
-    List<Area> findAreasNeedingAttention();
+    @Query("SELECT a FROM Area a WHERE a.ownerEmail = :ownerEmail AND a.currentCount >= a.threshold")
+    List<Area> findAreasNeedingAttentionByOwner(@Param("ownerEmail") String ownerEmail);
 
     /**
-     * Find areas that are at full capacity
-     * 
-     * @return List of areas at capacity
+     * Find areas that are at full capacity for a specific owner
      */
-    @Query("SELECT a FROM Area a WHERE a.currentCount >= a.capacity")
-    List<Area> findAreasAtCapacity();
+    @Query("SELECT a FROM Area a WHERE a.ownerEmail = :ownerEmail AND a.currentCount >= a.capacity")
+    List<Area> findAreasAtCapacityByOwner(@Param("ownerEmail") String ownerEmail);
 
     /**
      * Increment the current count for an area (for entry scan)

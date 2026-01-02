@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import authService from '../services/authService'
 
 /**
@@ -8,39 +8,84 @@ import authService from '../services/authService'
  * Admin login form with Google OAuth support.
  */
 function Login({ onLogin }) {
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
 
+  // Check if already logged in (and no OAuth redirect happening)
+  useEffect(() => {
+    const isAuthenticated = localStorage.getItem('isAuthenticated')
+    const hasOAuthParams = searchParams.get('success') || searchParams.get('error')
+    
+    if (isAuthenticated === 'true' && !hasOAuthParams) {
+      navigate('/dashboard', { replace: true })
+    }
+  }, [navigate, searchParams])
+
   // Handle OAuth redirect
   useEffect(() => {
     const success = searchParams.get('success')
     const email = searchParams.get('email')
-    const error = searchParams.get('error')
+    const name = searchParams.get('name')
+    const errorParam = searchParams.get('error')
+
+    console.log('OAuth callback params:', { success, email, name, errorParam })
 
     if (success === 'true' && email) {
+      // Clear any existing auth data first (for switching accounts)
+      localStorage.removeItem('isAuthenticated')
+      localStorage.removeItem('userEmail')
+      localStorage.removeItem('userName')
+      localStorage.removeItem('authProvider')
+      
+      // Clear URL params to prevent re-processing
+      setSearchParams({})
+      
+      // Decode the name (it's URL encoded from backend)
+      const decodedName = name ? decodeURIComponent(name) : email
+      
       // Validate the Google login with backend
-      handleGoogleCallback(email)
-    } else if (error === 'true') {
+      handleGoogleCallback(email, decodedName)
+    } else if (errorParam === 'true') {
       setError('Google login failed. Please try again.')
+      setSearchParams({})
     }
   }, [searchParams])
 
-  const handleGoogleCallback = async (email) => {
+  const handleGoogleCallback = async (email, name) => {
     setGoogleLoading(true)
     try {
       const result = await authService.validateGoogleLogin(email)
+      console.log('validateGoogleLogin result:', result)
+      
       if (result.success) {
+        // Set new user data - use the email and name from OAuth, not from backend
+        console.log('Setting localStorage - email:', email, 'name:', name)
         localStorage.setItem('userEmail', email)
+        localStorage.setItem('userName', name)
         localStorage.setItem('authProvider', 'google')
+        localStorage.setItem('isAuthenticated', 'true')
+        
+        // Verify localStorage was set correctly
+        console.log('localStorage after setting:', {
+          userEmail: localStorage.getItem('userEmail'),
+          userName: localStorage.getItem('userName'),
+          authProvider: localStorage.getItem('authProvider'),
+          isAuthenticated: localStorage.getItem('isAuthenticated')
+        })
+        
         onLogin()
+        // Navigate to dashboard after successful login
+        navigate('/dashboard', { replace: true })
       } else {
         setError(result.message || 'Google login failed')
       }
     } catch (err) {
+      console.error('Google callback error:', err)
       setError('Failed to validate Google login')
     } finally {
       setGoogleLoading(false)
@@ -70,6 +115,12 @@ function Login({ onLogin }) {
   const handleGoogleLogin = async () => {
     setGoogleLoading(true)
     try {
+      // Clear any existing auth data before starting new login
+      localStorage.removeItem('isAuthenticated')
+      localStorage.removeItem('userEmail')
+      localStorage.removeItem('userName')
+      localStorage.removeItem('authProvider')
+      
       const { url } = await authService.getGoogleAuthUrl()
       // Redirect to Google OAuth
       window.location.href = url
