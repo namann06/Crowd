@@ -97,14 +97,14 @@ function Analytics() {
     return hours
   }
 
-  // Get heat intensity based on occupancy (monochrome)
+  // Get heat intensity based on occupancy (Cool Slate palette)
   const getHeatIntensity = (area) => {
     const occupancy = (area.currentCount / area.capacity) * 100
-    if (occupancy >= 90) return 'bg-neutral-900 text-white'
-    if (occupancy >= 70) return 'bg-neutral-700 text-white'
-    if (occupancy >= 50) return 'bg-neutral-500 text-white'
-    if (occupancy >= 30) return 'bg-neutral-300 text-neutral-800'
-    return 'bg-neutral-100 text-neutral-800'
+    if (occupancy >= 90) return 'bg-slate-900 text-white'
+    if (occupancy >= 70) return 'bg-slate-700 text-white'
+    if (occupancy >= 50) return 'bg-slate-500 text-white'
+    if (occupancy >= 30) return 'bg-slate-300 text-slate-800'
+    return 'bg-slate-100 text-slate-700'
   }
 
   // Monochrome chart options
@@ -214,22 +214,22 @@ function Analytics() {
                 {
                   label: 'Entries',
                   data: trendData.map(d => d.entries),
-                  borderColor: '#a3a3a3',
-                  backgroundColor: 'rgba(163, 163, 163, 0.1)',
+                  borderColor: '#64748b',
+                  backgroundColor: 'rgba(100, 116, 139, 0.1)',
                   borderWidth: 2,
                 },
                 {
                   label: 'Exits',
                   data: trendData.map(d => d.exits),
-                  borderColor: '#d4d4d4',
-                  backgroundColor: 'rgba(212, 212, 212, 0.1)',
+                  borderColor: '#94a3b8',
+                  backgroundColor: 'rgba(148, 163, 184, 0.1)',
                   borderWidth: 2,
                 },
                 {
                   label: 'Total Count',
                   data: trendData.map(d => d.count),
-                  borderColor: '#171717',
-                  backgroundColor: 'rgba(23, 23, 23, 0.05)',
+                  borderColor: '#0f172a',
+                  backgroundColor: 'rgba(15, 23, 42, 0.08)',
                   borderWidth: 2.5,
                 },
               ],
@@ -263,13 +263,13 @@ function Analytics() {
 
         {/* Legend */}
         <div className="mt-6 flex items-center justify-center gap-3">
-          <span className="text-xs text-neutral-500">Low</span>
+          <span className="text-xs text-slate-500">Low</span>
           <div className="flex gap-1">
-            {['bg-neutral-100', 'bg-neutral-300', 'bg-neutral-500', 'bg-neutral-700', 'bg-neutral-900'].map((color, i) => (
+            {['bg-slate-100', 'bg-slate-300', 'bg-slate-500', 'bg-slate-700', 'bg-slate-900'].map((color, i) => (
               <div key={i} className={`w-6 h-3 ${color} rounded`}></div>
             ))}
           </div>
-          <span className="text-xs text-neutral-500">High</span>
+          <span className="text-xs text-slate-500">High</span>
         </div>
       </div>
 

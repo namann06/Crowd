@@ -204,13 +204,13 @@ function Dashboard() {
                   {
                     label: 'Current',
                     data: areas.map(a => a.currentCount),
-                    backgroundColor: '#171717',
+                    backgroundColor: '#0f172a',
                     borderRadius: 4,
                   },
                   {
                     label: 'Capacity',
                     data: areas.map(a => a.capacity),
-                    backgroundColor: '#e5e5e5',
+                    backgroundColor: '#cbd5e1',
                     borderRadius: 4,
                   },
                 ],
@@ -230,7 +230,7 @@ function Dashboard() {
                 datasets: [
                   {
                     data: [statusCounts.GREEN, statusCounts.YELLOW, statusCounts.RED],
-                    backgroundColor: ['#d4d4d4', '#737373', '#171717'],
+                    backgroundColor: ['#cbd5e1', '#64748b', '#0f172a'],
                     borderWidth: 0,
                     cutout: '70%',
                   },
