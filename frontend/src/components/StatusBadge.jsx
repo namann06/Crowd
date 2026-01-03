@@ -1,16 +1,14 @@
 /**
  * StatusBadge Component
  * ---------------------
- * Displays a colored badge based on crowd status.
- * GREEN: Safe (below threshold)
- * YELLOW: Warning (at/above threshold)
- * RED: Critical (at/above capacity)
+ * Apple-inspired monochrome status badges.
+ * Uses grayscale palette for clean, professional look.
  */
-function StatusBadge({ status }) {
+function StatusBadge({ status, size = 'default' }) {
   const statusStyles = {
-    GREEN: 'bg-green-100 text-green-800 border-green-500',
-    YELLOW: 'bg-yellow-100 text-yellow-800 border-yellow-500',
-    RED: 'bg-red-100 text-red-800 border-red-500 animate-pulse',
+    GREEN: 'bg-neutral-100 text-neutral-700',
+    YELLOW: 'bg-neutral-200 text-neutral-800',
+    RED: 'bg-neutral-900 text-white',
   }
 
   const statusLabels = {
@@ -19,16 +17,26 @@ function StatusBadge({ status }) {
     RED: 'Critical',
   }
 
+  const dotStyles = {
+    GREEN: 'bg-neutral-400',
+    YELLOW: 'bg-neutral-500',
+    RED: 'bg-white',
+  }
+
+  const sizeClasses = size === 'small' 
+    ? 'px-2 py-0.5 text-xs' 
+    : 'px-2.5 py-1 text-xs'
+
   return (
     <span
-      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${
+      className={`inline-flex items-center gap-1.5 rounded-full font-medium tracking-tight ${
+        sizeClasses
+      } ${
         statusStyles[status] || statusStyles.GREEN
       }`}
     >
-      <span className={`w-2 h-2 rounded-full mr-2 ${
-        status === 'GREEN' ? 'bg-green-500' :
-        status === 'YELLOW' ? 'bg-yellow-500' :
-        'bg-red-500'
+      <span className={`w-1.5 h-1.5 rounded-full ${
+        dotStyles[status] || dotStyles.GREEN
       }`}></span>
       {statusLabels[status] || 'Unknown'}
     </span>

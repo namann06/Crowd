@@ -1,21 +1,23 @@
 /**
  * LoadingSpinner Component
  * ------------------------
- * A simple loading spinner for async operations.
+ * Minimalist Apple-style loading indicator.
  */
 function LoadingSpinner({ size = 'md', text = 'Loading...' }) {
   const sizes = {
-    sm: 'w-6 h-6',
-    md: 'w-10 h-10',
-    lg: 'w-16 h-16',
+    sm: 'w-5 h-5 border-2',
+    md: 'w-8 h-8 border-2',
+    lg: 'w-12 h-12 border-[3px]',
   }
 
   return (
-    <div className="flex flex-col items-center justify-center p-8">
+    <div className="flex flex-col items-center justify-center py-16">
       <div
-        className={`${sizes[size]} border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin`}
+        className={`${sizes[size]} border-neutral-200 border-t-neutral-900 rounded-full animate-spin`}
       ></div>
-      {text && <p className="mt-4 text-gray-600">{text}</p>}
+      {text && (
+        <p className="mt-4 text-sm text-neutral-500 tracking-tight">{text}</p>
+      )}
     </div>
   )
 }

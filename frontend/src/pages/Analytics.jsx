@@ -28,10 +28,7 @@ ChartJS.register(
 /**
  * Analytics Page
  * --------------
- * Shows crowd analytics:
- * - Hourly trend chart
- * - Heatmap-style area visualization
- * - Simple prediction using moving average
+ * Apple-inspired minimalist analytics with monochrome charts.
  */
 function Analytics() {
   const [areas, setAreas] = useState([])
@@ -67,7 +64,6 @@ function Analytics() {
         const data = await scanService.getHourlyTrend(selectedAreaId)
         setTrendData(data)
         
-        // Calculate simple prediction (moving average of last 3 hours)
         if (data.length >= 3) {
           const lastThree = data.slice(-3)
           const avg = Math.round(
@@ -79,7 +75,6 @@ function Analytics() {
         }
       } catch (err) {
         console.error('Failed to fetch trends:', err)
-        // Use mock data for demo
         setTrendData(generateMockTrendData())
       }
     }
@@ -102,19 +97,56 @@ function Analytics() {
     return hours
   }
 
-  // Get heat intensity class (0-10) based on occupancy
-  const getHeatClass = (area) => {
+  // Get heat intensity based on occupancy (monochrome)
+  const getHeatIntensity = (area) => {
     const occupancy = (area.currentCount / area.capacity) * 100
-    if (occupancy >= 100) return 'bg-red-600'
-    if (occupancy >= 90) return 'bg-red-500'
-    if (occupancy >= 80) return 'bg-orange-500'
-    if (occupancy >= 70) return 'bg-orange-400'
-    if (occupancy >= 60) return 'bg-yellow-500'
-    if (occupancy >= 50) return 'bg-yellow-400'
-    if (occupancy >= 40) return 'bg-green-400'
-    if (occupancy >= 30) return 'bg-green-500'
-    if (occupancy >= 20) return 'bg-green-600'
-    return 'bg-green-700'
+    if (occupancy >= 90) return 'bg-neutral-900 text-white'
+    if (occupancy >= 70) return 'bg-neutral-700 text-white'
+    if (occupancy >= 50) return 'bg-neutral-500 text-white'
+    if (occupancy >= 30) return 'bg-neutral-300 text-neutral-800'
+    return 'bg-neutral-100 text-neutral-800'
+  }
+
+  // Monochrome chart options
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          usePointStyle: true,
+          padding: 20,
+          font: {
+            family: '-apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif',
+            size: 11,
+            weight: '500'
+          },
+          color: '#525252'
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: {
+          font: { family: '-apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif', size: 10 },
+          color: '#737373'
+        }
+      },
+      y: {
+        beginAtZero: true,
+        grid: { color: '#f5f5f5' },
+        ticks: {
+          font: { family: '-apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif', size: 10 },
+          color: '#737373'
+        }
+      }
+    },
+    elements: {
+      line: { tension: 0.4 },
+      point: { radius: 3, hoverRadius: 5 }
+    }
   }
 
   if (loading) {
@@ -124,14 +156,17 @@ function Analytics() {
   const selectedArea = areas.find(a => a.id === selectedAreaId)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
+      <div className="flex items-end justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-neutral-900 tracking-tight">Analytics</h1>
+          <p className="text-sm text-neutral-500 mt-1">Crowd trends and predictions</p>
+        </div>
         <select
           value={selectedAreaId || ''}
           onChange={(e) => setSelectedAreaId(Number(e.target.value))}
-          className="input w-64"
+          className="input w-56"
         >
           {areas.map((area) => (
             <option key={area.id} value={area.id}>
@@ -143,35 +178,35 @@ function Analytics() {
 
       {/* Stats Cards */}
       {selectedArea && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="card">
-            <p className="text-sm text-gray-600 mb-1">Current Count</p>
-            <p className="text-3xl font-bold text-blue-600">{selectedArea.currentCount}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="stat-card">
+            <p className="stat-label">Current Count</p>
+            <p className="stat-value">{selectedArea.currentCount}</p>
           </div>
-          <div className="card">
-            <p className="text-sm text-gray-600 mb-1">Capacity</p>
-            <p className="text-3xl font-bold text-gray-600">{selectedArea.capacity}</p>
+          <div className="stat-card">
+            <p className="stat-label">Capacity</p>
+            <p className="stat-value">{selectedArea.capacity}</p>
           </div>
-          <div className="card">
-            <p className="text-sm text-gray-600 mb-1">Occupancy</p>
-            <p className="text-3xl font-bold text-purple-600">
+          <div className="stat-card">
+            <p className="stat-label">Occupancy</p>
+            <p className="stat-value">
               {Math.round((selectedArea.currentCount / selectedArea.capacity) * 100)}%
             </p>
           </div>
-          <div className="card border-l-4 border-blue-500">
-            <p className="text-sm text-gray-600 mb-1">Predicted (Next Hour)</p>
-            <p className="text-3xl font-bold text-blue-700">
+          <div className="stat-card" style={{ borderLeft: '3px solid #171717' }}>
+            <p className="stat-label">Predicted Next Hour</p>
+            <p className="stat-value">
               {prediction !== null ? prediction : '—'}
             </p>
-            <p className="text-xs text-gray-500">Based on moving average</p>
+            <p className="stat-meta">Moving average</p>
           </div>
         </div>
       )}
 
       {/* Trend Chart */}
       <div className="card">
-        <h3 className="text-lg font-semibold mb-4">Hourly Trend</h3>
-        <div className="h-80">
+        <h3 className="text-base font-semibold text-neutral-900 mb-6">Hourly Trend</h3>
+        <div className="h-72">
           <Line
             data={{
               labels: trendData.map(d => d.hour),
@@ -179,55 +214,47 @@ function Analytics() {
                 {
                   label: 'Entries',
                   data: trendData.map(d => d.entries),
-                  borderColor: '#22c55e',
-                  backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                  tension: 0.3,
+                  borderColor: '#a3a3a3',
+                  backgroundColor: 'rgba(163, 163, 163, 0.1)',
+                  borderWidth: 2,
                 },
                 {
                   label: 'Exits',
                   data: trendData.map(d => d.exits),
-                  borderColor: '#ef4444',
-                  backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                  tension: 0.3,
+                  borderColor: '#d4d4d4',
+                  backgroundColor: 'rgba(212, 212, 212, 0.1)',
+                  borderWidth: 2,
                 },
                 {
                   label: 'Total Count',
                   data: trendData.map(d => d.count),
-                  borderColor: '#3b82f6',
-                  backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                  borderWidth: 3,
-                  tension: 0.3,
+                  borderColor: '#171717',
+                  backgroundColor: 'rgba(23, 23, 23, 0.05)',
+                  borderWidth: 2.5,
                 },
               ],
             }}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { position: 'top' } },
-              scales: {
-                y: { beginAtZero: true },
-              },
-            }}
+            options={chartOptions}
           />
         </div>
       </div>
 
       {/* Heatmap Grid */}
       <div className="card">
-        <h3 className="text-lg font-semibold mb-4">Area Heatmap</h3>
-        <p className="text-sm text-gray-600 mb-4">
-          Color intensity represents occupancy level (darker = more crowded)
+        <h3 className="text-base font-semibold text-neutral-900 mb-2">Area Density</h3>
+        <p className="text-sm text-neutral-500 mb-6">
+          Intensity represents current occupancy level
         </p>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {areas.map((area) => (
             <div
               key={area.id}
-              className={`${getHeatClass(area)} rounded-xl p-4 text-white transition-all hover:scale-105 cursor-pointer`}
+              className={`${getHeatIntensity(area)} rounded-xl p-4 transition-all hover:scale-[1.02] cursor-pointer`}
               onClick={() => setSelectedAreaId(area.id)}
             >
-              <h4 className="font-semibold truncate">{area.name}</h4>
-              <p className="text-3xl font-bold my-2">{area.currentCount}</p>
-              <p className="text-sm opacity-90">
+              <h4 className="font-medium text-sm truncate">{area.name}</h4>
+              <p className="text-2xl font-semibold my-2 tracking-tight">{area.currentCount}</p>
+              <p className="text-xs opacity-75">
                 of {area.capacity} ({Math.round((area.currentCount / area.capacity) * 100)}%)
               </p>
             </div>
@@ -235,27 +262,35 @@ function Analytics() {
         </div>
 
         {/* Legend */}
-        <div className="mt-6 flex items-center justify-center gap-2">
-          <span className="text-sm text-gray-600">Low</span>
+        <div className="mt-6 flex items-center justify-center gap-3">
+          <span className="text-xs text-neutral-500">Low</span>
           <div className="flex gap-1">
-            {['bg-green-700', 'bg-green-500', 'bg-yellow-400', 'bg-orange-500', 'bg-red-600'].map((color, i) => (
-              <div key={i} className={`w-8 h-4 ${color} rounded`}></div>
+            {['bg-neutral-100', 'bg-neutral-300', 'bg-neutral-500', 'bg-neutral-700', 'bg-neutral-900'].map((color, i) => (
+              <div key={i} className={`w-6 h-3 ${color} rounded`}></div>
             ))}
           </div>
-          <span className="text-sm text-gray-600">High</span>
+          <span className="text-xs text-neutral-500">High</span>
         </div>
       </div>
 
-      {/* Prediction Info */}
-      <div className="card bg-blue-50 border border-blue-200">
-        <h3 className="text-lg font-semibold text-blue-900 mb-2">
-          📊 Prediction Method
-        </h3>
-        <p className="text-sm text-blue-800">
-          The prediction uses a <strong>Simple Moving Average (SMA)</strong> of the last 3 hours 
-          of crowd data to estimate the next hour's count. This provides a basic but effective 
-          forecast for crowd planning.
-        </p>
+      {/* Prediction Method Info */}
+      <div className="card bg-neutral-50 border-neutral-200">
+        <div className="flex items-start gap-3">
+          <div className="w-8 h-8 bg-neutral-200 rounded-full flex items-center justify-center flex-shrink-0">
+            <svg className="w-4 h-4 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-neutral-900 mb-1">
+              Prediction Method
+            </h3>
+            <p className="text-sm text-neutral-600">
+              Predictions use a <strong>Simple Moving Average</strong> of the last 3 hours 
+              to estimate the next hour's crowd count.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )
