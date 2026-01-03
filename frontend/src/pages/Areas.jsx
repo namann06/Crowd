@@ -8,12 +8,7 @@ import LoadingSpinner from '../components/LoadingSpinner'
 /**
  * Areas Page
  * ----------
- * Manage all monitored areas:
- * - View all areas with status
- * - Create new area
- * - Edit existing area
- * - Delete area
- * - View QR codes for entry/exit
+ * Apple-inspired minimalist area management interface.
  */
 function Areas() {
   const navigate = useNavigate()
@@ -117,10 +112,8 @@ function Areas() {
       }
 
       if (selectedArea) {
-        // Update existing area
         await areaService.updateArea(selectedArea.id, areaData)
       } else {
-        // Create new area
         await areaService.createArea(areaData)
       }
 
@@ -133,10 +126,8 @@ function Areas() {
     }
   }
 
-  // Generate QR code URL (we'll use a simple service)
-  // Use network IP so QR codes work when scanned from other devices
+  // Generate QR code URL
   const getQRCodeUrl = (areaId, type) => {
-    // Use the current host - when accessed via IP, QR will have that IP
     const baseUrl = window.location.origin
     const scanUrl = `${baseUrl}/scan/${areaId}/${type}`
     return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(scanUrl)}`
@@ -147,32 +138,43 @@ function Areas() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Areas Management</h1>
+      <div className="flex items-end justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-neutral-900 tracking-tight">Areas</h1>
+          <p className="text-sm text-neutral-500 mt-1">Manage monitored locations</p>
+        </div>
         <button onClick={handleCreate} className="btn btn-primary">
-          + Add New Area
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+          </svg>
+          Add Area
         </button>
       </div>
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div className="bg-neutral-100 border border-neutral-200 text-neutral-700 px-4 py-3 rounded-xl text-sm">
           {error}
         </div>
       )}
 
       {/* Areas Grid */}
       {areas.length === 0 ? (
-        <div className="text-center py-12 card">
-          <p className="text-gray-500 mb-4">No areas configured yet.</p>
+        <div className="flex flex-col items-center justify-center py-16 card">
+          <div className="w-12 h-12 bg-neutral-100 rounded-full flex items-center justify-center mb-4">
+            <svg className="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z" />
+            </svg>
+          </div>
+          <p className="text-neutral-500 mb-4">No areas configured yet</p>
           <button onClick={handleCreate} className="btn btn-primary">
             Create First Area
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {areas.map((area) => (
             <AreaCard
               key={area.id}
@@ -189,11 +191,11 @@ function Areas() {
       <Modal
         isOpen={showFormModal}
         onClose={() => setShowFormModal(false)}
-        title={selectedArea ? 'Edit Area' : 'Create New Area'}
+        title={selectedArea ? 'Edit Area' : 'New Area'}
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {formError && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            <div className="bg-neutral-100 border border-neutral-200 text-neutral-700 px-4 py-3 rounded-xl text-sm">
               {formError}
             </div>
           )}
@@ -218,7 +220,7 @@ function Areas() {
                 value={formData.capacity}
                 onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
                 className="input"
-                placeholder="e.g., 100"
+                placeholder="100"
                 min="1"
                 required
               />
@@ -230,15 +232,15 @@ function Areas() {
                 value={formData.threshold}
                 onChange={(e) => setFormData({ ...formData, threshold: e.target.value })}
                 className="input"
-                placeholder="e.g., 80"
+                placeholder="80"
                 min="1"
                 required
               />
-              <p className="text-xs text-gray-500 mt-1">Warning level</p>
+              <p className="text-xs text-neutral-400 mt-1.5">Warning trigger level</p>
             </div>
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 pt-2">
             <button
               type="button"
               onClick={() => setShowFormModal(false)}
@@ -261,45 +263,58 @@ function Areas() {
       <Modal
         isOpen={showQRModal}
         onClose={() => setShowQRModal(false)}
-        title={`QR Codes - ${selectedArea?.name}`}
+        title={`QR Codes`}
+        size="lg"
       >
         {selectedArea && (
-          <div className="space-y-6">
-            <p className="text-sm text-gray-600">
-              Print these QR codes and place them at entry and exit points.
-              Users scan these to register their entry/exit.
-            </p>
+          <div className="space-y-5">
+            <div className="text-center">
+              <p className="text-sm text-neutral-500">
+                QR codes for <span className="font-medium text-neutral-900">{selectedArea.name}</span>
+              </p>
+            </div>
 
             <div className="grid grid-cols-2 gap-6">
               {/* Entry QR */}
-              <div className="text-center">
-                <h4 className="font-semibold text-green-700 mb-2">📥 Entry</h4>
+              <div className="text-center p-4 bg-neutral-50 rounded-xl">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <svg className="w-4 h-4 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 3.75H6.912a2.25 2.25 0 0 0-2.15 1.588L2.35 13.177a2.25 2.25 0 0 0-.1.661V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 0 0-2.15-1.588H15" />
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v8.25m0 0-3-3m3 3 3-3" />
+                  </svg>
+                  <span className="text-sm font-medium text-neutral-700">Entry</span>
+                </div>
                 <img
                   src={getQRCodeUrl(selectedArea.id, 'entry')}
                   alt="Entry QR Code"
-                  className="mx-auto border-4 border-green-500 rounded-lg"
+                  className="mx-auto rounded-lg"
                 />
-                <p className="text-xs text-gray-500 mt-2">Scan on entry</p>
+                <p className="text-xs text-neutral-400 mt-2">Scan on arrival</p>
               </div>
 
               {/* Exit QR */}
-              <div className="text-center">
-                <h4 className="font-semibold text-red-700 mb-2">📤 Exit</h4>
+              <div className="text-center p-4 bg-neutral-50 rounded-xl">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <svg className="w-4 h-4 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 8.25H7.5a2.25 2.25 0 0 0-2.25 2.25v9a2.25 2.25 0 0 0 2.25 2.25h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25H15m0-3-3-3m0 0-3 3m3-3v11.25" />
+                  </svg>
+                  <span className="text-sm font-medium text-neutral-700">Exit</span>
+                </div>
                 <img
                   src={getQRCodeUrl(selectedArea.id, 'exit')}
                   alt="Exit QR Code"
-                  className="mx-auto border-4 border-red-500 rounded-lg"
+                  className="mx-auto rounded-lg"
                 />
-                <p className="text-xs text-gray-500 mt-2">Scan on exit</p>
+                <p className="text-xs text-neutral-400 mt-2">Scan on departure</p>
               </div>
             </div>
 
-            <div className="pt-4 border-t">
+            <div className="pt-2">
               <button
                 onClick={() => setShowQRModal(false)}
                 className="w-full btn btn-secondary"
               >
-                Close
+                Done
               </button>
             </div>
           </div>
