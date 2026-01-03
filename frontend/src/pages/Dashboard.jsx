@@ -28,11 +28,10 @@ ChartJS.register(
 /**
  * Dashboard Page
  * --------------
- * Main dashboard showing:
- * - Summary statistics
- * - Area status overview
- * - Crowd count bar chart
- * - Status distribution pie chart
+ * Apple-inspired minimalist dashboard with:
+ * - Clean stat cards
+ * - Monochrome charts
+ * - Subtle shadows and borders
  */
 function Dashboard() {
   const [areas, setAreas] = useState([])
@@ -72,26 +71,51 @@ function Dashboard() {
   const totalCapacity = areas.reduce((sum, a) => sum + a.capacity, 0)
   const areasAtWarning = areas.filter(a => a.status === 'YELLOW').length
   const areasAtCritical = areas.filter(a => a.status === 'RED').length
+  const occupancyRate = totalCapacity > 0 ? Math.round((totalPeople / totalCapacity) * 100) : 0
 
-  // Data for bar chart
-  const chartData = areas.map(a => ({
-    name: a.name.length > 15 ? a.name.substring(0, 15) + '...' : a.name,
-    current: a.currentCount,
-    capacity: a.capacity,
-    threshold: a.threshold
-  }))
-
-  // Data for pie chart (status distribution)
+  // Status distribution counts
   const statusCounts = {
     GREEN: areas.filter(a => a.status === 'GREEN').length,
     YELLOW: areas.filter(a => a.status === 'YELLOW').length,
     RED: areas.filter(a => a.status === 'RED').length
   }
-  const pieData = [
-    { name: 'Safe', value: statusCounts.GREEN, color: '#22c55e' },
-    { name: 'Warning', value: statusCounts.YELLOW, color: '#eab308' },
-    { name: 'Critical', value: statusCounts.RED, color: '#ef4444' }
-  ].filter(d => d.value > 0)
+
+  // Monochrome chart theme
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top',
+        labels: {
+          usePointStyle: true,
+          padding: 20,
+          font: {
+            family: '-apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif',
+            size: 12,
+            weight: '500'
+          },
+          color: '#525252'
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: {
+          font: { family: '-apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif', size: 11 },
+          color: '#737373'
+        }
+      },
+      y: {
+        grid: { color: '#f5f5f5' },
+        ticks: {
+          font: { family: '-apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif', size: 11 },
+          color: '#737373'
+        }
+      }
+    }
+  }
 
   if (loading) {
     return <LoadingSpinner text="Loading dashboard..." />
@@ -99,8 +123,8 @@ function Dashboard() {
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-500 mb-4">{error}</p>
+      <div className="flex flex-col items-center justify-center py-16">
+        <p className="text-neutral-500 mb-4">{error}</p>
         <button onClick={fetchAreas} className="btn btn-primary">
           Retry
         </button>
@@ -109,36 +133,61 @@ function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Page Title */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <span className="text-sm text-gray-500">
-          Auto-refreshing every 5 seconds
-        </span>
+    <div className="space-y-8">
+      {/* Page Header */}
+      <div className="flex items-end justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-neutral-900 tracking-tight">Dashboard</h1>
+          <p className="text-sm text-neutral-500 mt-1">Real-time crowd monitoring overview</p>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-neutral-400">
+          <span className="w-2 h-2 bg-neutral-900 rounded-full animate-pulse"></span>
+          Live • Updates every 5s
+        </div>
       </div>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card">
-          <p className="text-sm text-gray-600 mb-1">Total People</p>
-          <p className="text-3xl font-bold text-blue-600">{totalPeople}</p>
-          <p className="text-sm text-gray-500">of {totalCapacity} capacity</p>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total People */}
+        <div className="stat-card">
+          <p className="stat-label">Total People</p>
+          <p className="stat-value">{totalPeople.toLocaleString()}</p>
+          <p className="stat-meta">of {totalCapacity.toLocaleString()} capacity</p>
         </div>
-        <div className="card">
-          <p className="text-sm text-gray-600 mb-1">Active Areas</p>
-          <p className="text-3xl font-bold text-gray-900">{areas.length}</p>
-          <p className="text-sm text-gray-500">being monitored</p>
+
+        {/* Active Areas */}
+        <div className="stat-card">
+          <p className="stat-label">Active Areas</p>
+          <p className="stat-value">{areas.length}</p>
+          <p className="stat-meta">being monitored</p>
         </div>
-        <div className="card border-l-4 border-yellow-500">
-          <p className="text-sm text-gray-600 mb-1">Warning Areas</p>
-          <p className="text-3xl font-bold text-yellow-600">{areasAtWarning}</p>
-          <p className="text-sm text-gray-500">at threshold</p>
+
+        {/* Warning Areas */}
+        <div className="stat-card">
+          <p className="stat-label">At Threshold</p>
+          <p className="stat-value">{areasAtWarning}</p>
+          <p className="stat-meta">{areasAtWarning === 1 ? 'area' : 'areas'} at warning</p>
         </div>
-        <div className="card border-l-4 border-red-500">
-          <p className="text-sm text-gray-600 mb-1">Critical Areas</p>
-          <p className="text-3xl font-bold text-red-600">{areasAtCritical}</p>
-          <p className="text-sm text-gray-500">at capacity</p>
+
+        {/* Critical Areas */}
+        <div className="stat-card" style={{ borderLeft: areasAtCritical > 0 ? '3px solid #171717' : undefined }}>
+          <p className="stat-label">Critical</p>
+          <p className="stat-value">{areasAtCritical}</p>
+          <p className="stat-meta">{areasAtCritical === 1 ? 'area' : 'areas'} at capacity</p>
+        </div>
+      </div>
+
+      {/* Occupancy Overview Bar */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm font-medium text-neutral-600">Overall Occupancy</span>
+          <span className="text-sm font-semibold text-neutral-900">{occupancyRate}%</span>
+        </div>
+        <div className="progress-bar">
+          <div 
+            className={`progress-bar-fill ${occupancyRate >= 90 ? 'critical' : occupancyRate >= 70 ? 'warning' : ''}`}
+            style={{ width: `${Math.min(occupancyRate, 100)}%` }}
+          ></div>
         </div>
       </div>
 
@@ -146,8 +195,8 @@ function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Bar Chart - Crowd Count per Area */}
         <div className="lg:col-span-2 card">
-          <h3 className="text-lg font-semibold mb-4">Crowd Count by Area</h3>
-          <div className="h-80">
+          <h3 className="text-base font-semibold text-neutral-900 mb-6">Crowd Distribution</h3>
+          <div className="h-72">
             <Bar
               data={{
                 labels: areas.map(a => a.name.length > 12 ? a.name.substring(0, 12) + '...' : a.name),
@@ -155,42 +204,56 @@ function Dashboard() {
                   {
                     label: 'Current',
                     data: areas.map(a => a.currentCount),
-                    backgroundColor: '#3b82f6',
+                    backgroundColor: '#171717',
+                    borderRadius: 4,
                   },
                   {
                     label: 'Capacity',
                     data: areas.map(a => a.capacity),
-                    backgroundColor: '#e5e7eb',
+                    backgroundColor: '#e5e5e5',
+                    borderRadius: 4,
                   },
                 ],
               }}
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'top' } },
-              }}
+              options={chartOptions}
             />
           </div>
         </div>
 
         {/* Doughnut Chart - Status Distribution */}
         <div className="card">
-          <h3 className="text-lg font-semibold mb-4">Status Distribution</h3>
-          <div className="h-80 flex items-center justify-center">
+          <h3 className="text-base font-semibold text-neutral-900 mb-6">Status Overview</h3>
+          <div className="h-72 flex items-center justify-center">
             <Doughnut
               data={{
                 labels: ['Safe', 'Warning', 'Critical'],
                 datasets: [
                   {
                     data: [statusCounts.GREEN, statusCounts.YELLOW, statusCounts.RED],
-                    backgroundColor: ['#22c55e', '#eab308', '#ef4444'],
+                    backgroundColor: ['#d4d4d4', '#737373', '#171717'],
+                    borderWidth: 0,
+                    cutout: '70%',
                   },
                 ],
               }}
               options={{
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom' } },
+                plugins: {
+                  legend: {
+                    position: 'bottom',
+                    labels: {
+                      usePointStyle: true,
+                      padding: 16,
+                      font: {
+                        family: '-apple-system, BlinkMacSystemFont, Inter, system-ui, sans-serif',
+                        size: 11,
+                        weight: '500'
+                      },
+                      color: '#525252'
+                    }
+                  }
+                },
               }}
             />
           </div>
@@ -199,48 +262,48 @@ function Dashboard() {
 
       {/* Areas Table */}
       <div className="card">
-        <h3 className="text-lg font-semibold mb-4">All Areas Status</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <h3 className="text-base font-semibold text-neutral-900 mb-6">All Areas</h3>
+        <div className="table-container">
+          <table className="table">
             <thead>
-              <tr className="bg-gray-50">
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Area</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Current</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Threshold</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Capacity</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Occupancy</th>
-                <th className="px-4 py-3 text-left text-sm font-semibold text-gray-600">Status</th>
+              <tr>
+                <th>Area</th>
+                <th>Current</th>
+                <th>Threshold</th>
+                <th>Capacity</th>
+                <th>Occupancy</th>
+                <th>Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {areas.map((area) => (
-                <tr key={area.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{area.name}</td>
-                  <td className="px-4 py-3 text-gray-600">{area.currentCount}</td>
-                  <td className="px-4 py-3 text-gray-600">{area.threshold}</td>
-                  <td className="px-4 py-3 text-gray-600">{area.capacity}</td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full ${
-                            area.status === 'RED' ? 'bg-red-500' :
-                            area.status === 'YELLOW' ? 'bg-yellow-500' :
-                            'bg-green-500'
-                          }`}
-                          style={{ width: `${Math.min((area.currentCount / area.capacity) * 100, 100)}%` }}
-                        ></div>
+            <tbody>
+              {areas.map((area) => {
+                const occupancy = Math.round((area.currentCount / area.capacity) * 100)
+                return (
+                  <tr key={area.id}>
+                    <td className="font-medium text-neutral-900">{area.name}</td>
+                    <td>{area.currentCount}</td>
+                    <td>{area.threshold}</td>
+                    <td>{area.capacity}</td>
+                    <td>
+                      <div className="flex items-center gap-3">
+                        <div className="w-20 progress-bar">
+                          <div
+                            className={`progress-bar-fill ${
+                              area.status === 'RED' ? 'critical' :
+                              area.status === 'YELLOW' ? 'warning' : ''
+                            }`}
+                            style={{ width: `${Math.min(occupancy, 100)}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-xs text-neutral-500 w-8">{occupancy}%</span>
                       </div>
-                      <span className="text-sm text-gray-600">
-                        {Math.round((area.currentCount / area.capacity) * 100)}%
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={area.status} />
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td>
+                      <StatusBadge status={area.status} />
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
