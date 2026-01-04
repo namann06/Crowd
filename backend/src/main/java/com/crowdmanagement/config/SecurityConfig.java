@@ -66,6 +66,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/areas/**").permitAll()  // Area management endpoints
                 .requestMatchers("/oauth2/**").permitAll()     // OAuth2 endpoints
                 .requestMatchers("/login/**").permitAll()      // Login pages
+                .requestMatchers("/ws/**").permitAll()         // WebSocket endpoints
                 // All other API endpoints require authentication
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()

@@ -14,6 +14,10 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  // Define global for sockjs-client compatibility
+  define: {
+    global: 'globalThis',
+  },
   server: {
     port: 5173,
     host: true, // Listen on all network interfaces (allows access from other devices)
@@ -23,6 +27,12 @@ export default defineConfig({
         target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
+      },
+      '/ws': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+        ws: true, // Enable WebSocket proxying
       }
     }
   }
