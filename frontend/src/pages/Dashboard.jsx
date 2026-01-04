@@ -10,7 +10,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js'
-import areaService from '../services/areaService'
+import eventService from '../services/eventService'
 import websocketService from '../services/websocketService'
 import StatusBadge from '../components/StatusBadge'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -34,21 +34,27 @@ ChartJS.register(
  * - Monochrome charts
  * - Subtle shadows and borders
  * - Real-time WebSocket updates
+ * - Areas grouped by events
  */
 function Dashboard() {
-  const [areas, setAreas] = useState([])
+  const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [wsConnected, setWsConnected] = useState(false)
 
-  // Fetch areas data
-  const fetchAreas = async () => {
+  // Flatten all areas from events
+  const areas = events.flatMap(event => 
+    (event.areas || []).map(area => ({ ...area, eventName: event.name, eventId: event.id }))
+  )
+
+  // Fetch events data
+  const fetchEvents = async () => {
     try {
-      const data = await areaService.getAllAreas()
-      setAreas(data)
+      const data = await eventService.getAllEvents()
+      setEvents(data)
       setError(null)
     } catch (err) {
-      setError('Failed to fetch areas')
+      setError('Failed to fetch data')
       console.error(err)
     } finally {
       setLoading(false)
@@ -57,20 +63,19 @@ function Dashboard() {
 
   // Handle real-time area update from WebSocket
   const handleAreaUpdate = useCallback((updatedArea) => {
-    setAreas(prevAreas => {
-      const index = prevAreas.findIndex(a => a.id === updatedArea.id)
-      if (index >= 0) {
-        const newAreas = [...prevAreas]
-        newAreas[index] = updatedArea
-        return newAreas
-      }
-      return prevAreas
+    setEvents(prevEvents => {
+      return prevEvents.map(event => ({
+        ...event,
+        areas: (event.areas || []).map(area => 
+          area.id === updatedArea.id ? updatedArea : area
+        )
+      }))
     })
   }, [])
 
   // Initial fetch and WebSocket setup
   useEffect(() => {
-    fetchAreas()
+    fetchEvents()
     
     let subId = null
     
@@ -154,7 +159,7 @@ function Dashboard() {
     return (
       <div className="flex flex-col items-center justify-center py-16">
         <p className="text-neutral-500 mb-4">{error}</p>
-        <button onClick={fetchAreas} className="btn btn-primary">
+        <button onClick={fetchEvents} className="btn btn-primary">
           Retry
         </button>
       </div>
@@ -289,53 +294,97 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Areas Table */}
+      {/* Areas Table - Grouped by Events */}
       <div className="card">
         <h3 className="text-base font-semibold text-neutral-900 mb-6">All Areas</h3>
-        <div className="table-container">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Area</th>
-                <th>Current</th>
-                <th>Threshold</th>
-                <th>Capacity</th>
-                <th>Occupancy</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {areas.map((area) => {
-                const occupancy = Math.round((area.currentCount / area.capacity) * 100)
-                return (
-                  <tr key={area.id}>
-                    <td className="font-medium text-neutral-900">{area.name}</td>
-                    <td>{area.currentCount}</td>
-                    <td>{area.threshold}</td>
-                    <td>{area.capacity}</td>
-                    <td>
-                      <div className="flex items-center gap-3">
-                        <div className="w-20 progress-bar">
-                          <div
-                            className={`progress-bar-fill ${
-                              area.status === 'RED' ? 'critical' :
-                              area.status === 'YELLOW' ? 'warning' : ''
-                            }`}
-                            style={{ width: `${Math.min(occupancy, 100)}%` }}
-                          ></div>
-                        </div>
-                        <span className="text-xs text-neutral-500 w-8">{occupancy}%</span>
-                      </div>
-                    </td>
-                    <td>
-                      <StatusBadge status={area.status} />
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+        {events.length === 0 ? (
+          <div className="text-center py-8 text-neutral-500">
+            <p>No events or areas configured yet</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {events.map((event) => (
+              <div key={event.id} className="border border-neutral-200 rounded-xl overflow-hidden">
+                {/* Event Header */}
+                <div className="bg-neutral-50 px-4 py-3 border-b border-neutral-200 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-neutral-900 rounded-lg flex items-center justify-center">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-neutral-900">{event.name}</h4>
+                      <p className="text-xs text-neutral-500">
+                        {event.totalAreas} {event.totalAreas === 1 ? 'area' : 'areas'} • 
+                        {event.totalCurrentCount}/{event.totalCapacity} people
+                      </p>
+                    </div>
+                  </div>
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                    event.status === 'LIVE' ? 'bg-green-100 text-green-700' :
+                    event.status === 'UPCOMING' ? 'bg-blue-100 text-blue-700' :
+                    'bg-neutral-100 text-neutral-600'
+                  }`}>
+                    {event.status}
+                  </span>
+                </div>
+                
+                {/* Areas Table */}
+                {event.areas && event.areas.length > 0 ? (
+                  <div className="table-container">
+                    <table className="table">
+                      <thead>
+                        <tr>
+                          <th>Area</th>
+                          <th>Current</th>
+                          <th>Threshold</th>
+                          <th>Capacity</th>
+                          <th>Occupancy</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {event.areas.map((area) => {
+                          const occupancy = Math.round((area.currentCount / area.capacity) * 100)
+                          return (
+                            <tr key={area.id}>
+                              <td className="font-medium text-neutral-900">{area.name}</td>
+                              <td>{area.currentCount}</td>
+                              <td>{area.threshold}</td>
+                              <td>{area.capacity}</td>
+                              <td>
+                                <div className="flex items-center gap-3">
+                                  <div className="w-20 progress-bar">
+                                    <div
+                                      className={`progress-bar-fill ${
+                                        area.status === 'RED' ? 'critical' :
+                                        area.status === 'YELLOW' ? 'warning' : ''
+                                      }`}
+                                      style={{ width: `${Math.min(occupancy, 100)}%` }}
+                                    ></div>
+                                  </div>
+                                  <span className="text-xs text-neutral-500 w-8">{occupancy}%</span>
+                                </div>
+                              </td>
+                              <td>
+                                <StatusBadge status={area.status} />
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="p-4 text-center text-neutral-500 text-sm">
+                    No areas in this event
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

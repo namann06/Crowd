@@ -1,41 +1,35 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import areaService from '../services/areaService'
+import eventService from '../services/eventService'
 import websocketService from '../services/websocketService'
 import AreaCard from '../components/AreaCard'
 import Modal from '../components/Modal'
 import LoadingSpinner from '../components/LoadingSpinner'
+import StatusBadge from '../components/StatusBadge'
 
 /**
  * Areas Page
  * ----------
  * Apple-inspired minimalist area management interface.
  * Features real-time WebSocket updates.
+ * Areas are grouped by their parent events.
  */
 function Areas() {
   const navigate = useNavigate()
-  const [areas, setAreas] = useState([])
+  const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [wsConnected, setWsConnected] = useState(false)
   
   // Modal states
-  const [showFormModal, setShowFormModal] = useState(false)
   const [showQRModal, setShowQRModal] = useState(false)
   const [selectedArea, setSelectedArea] = useState(null)
-  const [formData, setFormData] = useState({
-    name: '',
-    capacity: '',
-    threshold: ''
-  })
-  const [formError, setFormError] = useState('')
-  const [saving, setSaving] = useState(false)
 
-  // Fetch all areas
-  const fetchAreas = async () => {
+  // Fetch all events with areas
+  const fetchEvents = async () => {
     try {
-      const data = await areaService.getAllAreas()
-      setAreas(data)
+      const data = await eventService.getAllEvents()
+      setEvents(data)
       setError(null)
     } catch (err) {
       setError('Failed to fetch areas')
@@ -46,19 +40,18 @@ function Areas() {
 
   // Handle real-time area update from WebSocket
   const handleAreaUpdate = useCallback((updatedArea) => {
-    setAreas(prevAreas => {
-      const index = prevAreas.findIndex(a => a.id === updatedArea.id)
-      if (index >= 0) {
-        const newAreas = [...prevAreas]
-        newAreas[index] = updatedArea
-        return newAreas
-      }
-      return prevAreas
+    setEvents(prevEvents => {
+      return prevEvents.map(event => ({
+        ...event,
+        areas: (event.areas || []).map(area => 
+          area.id === updatedArea.id ? updatedArea : area
+        )
+      }))
     })
   }, [])
 
   useEffect(() => {
-    fetchAreas()
+    fetchEvents()
     
     let subId = null
     
@@ -83,85 +76,10 @@ function Areas() {
     }
   }, [handleAreaUpdate])
 
-  // Open form for creating new area
-  const handleCreate = () => {
-    setSelectedArea(null)
-    setFormData({ name: '', capacity: '', threshold: '' })
-    setFormError('')
-    setShowFormModal(true)
-  }
-
-  // Open form for editing area
-  const handleEdit = (area) => {
-    setSelectedArea(area)
-    setFormData({
-      name: area.name,
-      capacity: area.capacity.toString(),
-      threshold: area.threshold.toString()
-    })
-    setFormError('')
-    setShowFormModal(true)
-  }
-
-  // Delete area
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this area?')) return
-    
-    try {
-      await areaService.deleteArea(id)
-      await fetchAreas()
-    } catch (err) {
-      alert('Failed to delete area')
-    }
-  }
-
   // View QR codes for area
   const handleViewQR = (area) => {
     setSelectedArea(area)
     setShowQRModal(true)
-  }
-
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setFormError('')
-    setSaving(true)
-
-    const capacity = parseInt(formData.capacity)
-    const threshold = parseInt(formData.threshold)
-
-    // Validation
-    if (!formData.name.trim()) {
-      setFormError('Area name is required')
-      setSaving(false)
-      return
-    }
-    if (threshold > capacity) {
-      setFormError('Threshold cannot exceed capacity')
-      setSaving(false)
-      return
-    }
-
-    try {
-      const areaData = {
-        name: formData.name.trim(),
-        capacity,
-        threshold
-      }
-
-      if (selectedArea) {
-        await areaService.updateArea(selectedArea.id, areaData)
-      } else {
-        await areaService.createArea(areaData)
-      }
-
-      setShowFormModal(false)
-      await fetchAreas()
-    } catch (err) {
-      setFormError(err.response?.data?.message || 'Failed to save area')
-    } finally {
-      setSaving(false)
-    }
   }
 
   // Generate QR code URL
@@ -171,9 +89,28 @@ function Areas() {
     return `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(scanUrl)}`
   }
 
+  // Get all areas flattened from events
+  const getAllAreas = () => {
+    return events.flatMap(event => 
+      (event.areas || []).map(area => ({ ...area, eventName: event.name, eventStatus: event.status }))
+    )
+  }
+
+  // Get event status badge color
+  const getEventStatusColor = (status) => {
+    switch (status) {
+      case 'LIVE': return 'bg-green-100 text-green-700'
+      case 'UPCOMING': return 'bg-blue-100 text-blue-700'
+      case 'COMPLETED': return 'bg-neutral-100 text-neutral-600'
+      default: return 'bg-neutral-100 text-neutral-600'
+    }
+  }
+
   if (loading) {
     return <LoadingSpinner text="Loading areas..." />
   }
+
+  const allAreas = getAllAreas()
 
   return (
     <div className="space-y-8">
@@ -181,14 +118,24 @@ function Areas() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-neutral-900 tracking-tight">Areas</h1>
-          <p className="text-sm text-neutral-500 mt-1">Manage monitored locations</p>
+          <p className="text-sm text-neutral-500 mt-1">
+            All areas grouped by events • {allAreas.length} total areas
+          </p>
         </div>
-        <button onClick={handleCreate} className="btn btn-primary">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-          </svg>
-          Add Area
-        </button>
+        <div className="flex items-center gap-3">
+          {wsConnected && (
+            <div className="flex items-center gap-1.5 text-xs text-green-600">
+              <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+              Live
+            </div>
+          )}
+          <button onClick={() => navigate('/events')} className="btn btn-primary">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+            Create Event
+          </button>
+        </div>
       </div>
 
       {/* Error Message */}
@@ -198,104 +145,69 @@ function Areas() {
         </div>
       )}
 
-      {/* Areas Grid */}
-      {areas.length === 0 ? (
+      {/* Events with Areas */}
+      {events.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 card">
           <div className="w-12 h-12 bg-neutral-100 rounded-full flex items-center justify-center mb-4">
             <svg className="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Zm0 3h.008v.008h-.008v-.008Z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
             </svg>
           </div>
-          <p className="text-neutral-500 mb-4">No areas configured yet</p>
-          <button onClick={handleCreate} className="btn btn-primary">
-            Create First Area
+          <p className="text-neutral-500 mb-4">No events created yet</p>
+          <button onClick={() => navigate('/events')} className="btn btn-primary">
+            Create First Event
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {areas.map((area) => (
-            <AreaCard
-              key={area.id}
-              area={area}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onViewQR={handleViewQR}
-            />
+        <div className="space-y-6">
+          {events.map((event) => (
+            <div key={event.id} className="card overflow-hidden">
+              {/* Event Header */}
+              <div className="flex items-center justify-between p-4 bg-neutral-50 border-b border-neutral-100">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white border border-neutral-200 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-neutral-900">{event.name}</h3>
+                    <p className="text-xs text-neutral-500">
+                      {event.venue} • {new Date(event.eventDateTime).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <StatusBadge status={event.status} />
+                  <span className="text-sm text-neutral-500">
+                    {(event.areas || []).length} areas
+                  </span>
+                </div>
+              </div>
+
+              {/* Areas Grid */}
+              {(!event.areas || event.areas.length === 0) ? (
+                <div className="p-8 text-center">
+                  <p className="text-sm text-neutral-400">No areas in this event</p>
+                </div>
+              ) : (
+                <div className="p-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {event.areas.map((area) => (
+                      <AreaCard
+                        key={area.id}
+                        area={area}
+                        onViewQR={handleViewQR}
+                        compact
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           ))}
         </div>
       )}
-
-      {/* Create/Edit Modal */}
-      <Modal
-        isOpen={showFormModal}
-        onClose={() => setShowFormModal(false)}
-        title={selectedArea ? 'Edit Area' : 'New Area'}
-      >
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {formError && (
-            <div className="bg-neutral-100 border border-neutral-200 text-neutral-700 px-4 py-3 rounded-xl text-sm">
-              {formError}
-            </div>
-          )}
-
-          <div>
-            <label className="label">Area Name</label>
-            <input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="input"
-              placeholder="e.g., Main Entrance"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label">Capacity</label>
-              <input
-                type="number"
-                value={formData.capacity}
-                onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-                className="input"
-                placeholder="100"
-                min="1"
-                required
-              />
-            </div>
-            <div>
-              <label className="label">Threshold</label>
-              <input
-                type="number"
-                value={formData.threshold}
-                onChange={(e) => setFormData({ ...formData, threshold: e.target.value })}
-                className="input"
-                placeholder="80"
-                min="1"
-                required
-              />
-              <p className="text-xs text-neutral-400 mt-1.5">Warning trigger level</p>
-            </div>
-          </div>
-
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={() => setShowFormModal(false)}
-              className="flex-1 btn btn-secondary"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="flex-1 btn btn-primary disabled:opacity-50"
-            >
-              {saving ? 'Saving...' : selectedArea ? 'Update' : 'Create'}
-            </button>
-          </div>
-        </form>
-      </Modal>
 
       {/* QR Codes Modal */}
       <Modal
