@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import areaService from '../services/areaService'
+import websocketService from '../services/websocketService'
 import AreaCard from '../components/AreaCard'
 import Modal from '../components/Modal'
 import LoadingSpinner from '../components/LoadingSpinner'
@@ -9,12 +10,14 @@ import LoadingSpinner from '../components/LoadingSpinner'
  * Areas Page
  * ----------
  * Apple-inspired minimalist area management interface.
+ * Features real-time WebSocket updates.
  */
 function Areas() {
   const navigate = useNavigate()
   const [areas, setAreas] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [wsConnected, setWsConnected] = useState(false)
   
   // Modal states
   const [showFormModal, setShowFormModal] = useState(false)
@@ -41,9 +44,44 @@ function Areas() {
     }
   }
 
+  // Handle real-time area update from WebSocket
+  const handleAreaUpdate = useCallback((updatedArea) => {
+    setAreas(prevAreas => {
+      const index = prevAreas.findIndex(a => a.id === updatedArea.id)
+      if (index >= 0) {
+        const newAreas = [...prevAreas]
+        newAreas[index] = updatedArea
+        return newAreas
+      }
+      return prevAreas
+    })
+  }, [])
+
   useEffect(() => {
     fetchAreas()
-  }, [])
+    
+    let subId = null
+    
+    // Connect to WebSocket for real-time updates
+    websocketService.connect(
+      () => {
+        setWsConnected(true)
+        // Subscribe to area updates
+        subId = websocketService.subscribeToAllAreas(handleAreaUpdate)
+      },
+      (error) => {
+        console.error('WebSocket error:', error)
+        setWsConnected(false)
+      }
+    )
+    
+    // Cleanup on unmount
+    return () => {
+      if (subId) {
+        websocketService.unsubscribe(subId)
+      }
+    }
+  }, [handleAreaUpdate])
 
   // Open form for creating new area
   const handleCreate = () => {

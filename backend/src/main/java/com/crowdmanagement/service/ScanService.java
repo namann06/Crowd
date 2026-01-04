@@ -2,6 +2,7 @@ package com.crowdmanagement.service;
 
 import com.crowdmanagement.dto.ScanRequest;
 import com.crowdmanagement.dto.ScanResponse;
+import com.crowdmanagement.dto.AreaResponse;
 import com.crowdmanagement.entity.Area;
 import com.crowdmanagement.entity.ScanLog;
 import com.crowdmanagement.entity.ScanType;
@@ -31,6 +32,9 @@ public class ScanService {
     @Autowired
     private AreaService areaService;
 
+    @Autowired
+    private WebSocketService webSocketService;
+
     /**
      * Process a QR code scan (entry or exit)
      * @param request Scan details
@@ -52,6 +56,11 @@ public class ScanService {
         // Create scan log
         ScanLog scanLog = new ScanLog(area, request.getScanType());
         scanLog = scanLogRepository.save(scanLog);
+
+        // Broadcast real-time update via WebSocket
+        AreaResponse updatedArea = areaService.getAreaByIdPublic(request.getAreaId());
+        webSocketService.broadcastAreaUpdate(updatedArea);
+        webSocketService.broadcastScanEvent(request.getAreaId(), request.getScanType().name(), newCount);
 
         return ScanResponse.fromEntity(scanLog, newCount);
     }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Bar, Doughnut } from 'react-chartjs-2'
 import {
   Chart as ChartJS,
@@ -11,6 +11,7 @@ import {
   Legend,
 } from 'chart.js'
 import areaService from '../services/areaService'
+import websocketService from '../services/websocketService'
 import StatusBadge from '../components/StatusBadge'
 import LoadingSpinner from '../components/LoadingSpinner'
 
@@ -32,14 +33,13 @@ ChartJS.register(
  * - Clean stat cards
  * - Monochrome charts
  * - Subtle shadows and borders
+ * - Real-time WebSocket updates
  */
 function Dashboard() {
   const [areas, setAreas] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
-
-  // Polling interval for real-time updates (5 seconds)
-  const POLL_INTERVAL = 5000
+  const [wsConnected, setWsConnected] = useState(false)
 
   // Fetch areas data
   const fetchAreas = async () => {
@@ -55,16 +55,45 @@ function Dashboard() {
     }
   }
 
-  // Initial fetch and polling setup
+  // Handle real-time area update from WebSocket
+  const handleAreaUpdate = useCallback((updatedArea) => {
+    setAreas(prevAreas => {
+      const index = prevAreas.findIndex(a => a.id === updatedArea.id)
+      if (index >= 0) {
+        const newAreas = [...prevAreas]
+        newAreas[index] = updatedArea
+        return newAreas
+      }
+      return prevAreas
+    })
+  }, [])
+
+  // Initial fetch and WebSocket setup
   useEffect(() => {
     fetchAreas()
     
-    // Set up polling for real-time updates
-    const interval = setInterval(fetchAreas, POLL_INTERVAL)
+    let subId = null
+    
+    // Connect to WebSocket for real-time updates
+    websocketService.connect(
+      () => {
+        setWsConnected(true)
+        // Subscribe to area updates
+        subId = websocketService.subscribeToAllAreas(handleAreaUpdate)
+      },
+      (error) => {
+        console.error('WebSocket error:', error)
+        setWsConnected(false)
+      }
+    )
     
     // Cleanup on unmount
-    return () => clearInterval(interval)
-  }, [])
+    return () => {
+      if (subId) {
+        websocketService.unsubscribe(subId)
+      }
+    }
+  }, [handleAreaUpdate])
 
   // Calculate summary stats
   const totalPeople = areas.reduce((sum, a) => sum + a.currentCount, 0)
@@ -141,8 +170,8 @@ function Dashboard() {
           <p className="text-sm text-neutral-500 mt-1">Real-time crowd monitoring overview</p>
         </div>
         <div className="flex items-center gap-2 text-xs text-neutral-400">
-          <span className="w-2 h-2 bg-neutral-900 rounded-full animate-pulse"></span>
-          Live • Updates every 5s
+          <span className={`w-2 h-2 rounded-full animate-pulse ${wsConnected ? 'bg-green-500' : 'bg-neutral-400'}`}></span>
+          {wsConnected ? 'Live • Real-time' : 'Connecting...'}
         </div>
       </div>
 
