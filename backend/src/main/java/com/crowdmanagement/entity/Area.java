@@ -1,5 +1,6 @@
 package com.crowdmanagement.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -10,12 +11,12 @@ import java.time.LocalDateTime;
 /**
  * Area Entity
  * -----------
- * Represents a monitored area/zone in the venue.
+ * Represents a monitored area/zone within an event.
  * Multi-tenant: Each area belongs to a specific user (owner).
  */
 @Entity
 @Table(name = "areas", uniqueConstraints = {
-    @UniqueConstraint(columnNames = {"name", "owner_email"})
+    @UniqueConstraint(columnNames = {"name", "event_id"})
 })
 public class Area {
 
@@ -32,6 +33,11 @@ public class Area {
     @Column(name = "owner_email", nullable = false, length = 100)
     private String ownerEmail;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "event_id")
+    @JsonIgnore
+    private Event event;
+
     @Min(value = 1, message = "Capacity must be at least 1")
     @Column(nullable = false)
     private Integer capacity;
@@ -43,6 +49,9 @@ public class Area {
     @Min(value = 0, message = "Current count cannot be negative")
     @Column(name = "current_count", nullable = false)
     private Integer currentCount = 0;
+
+    @Column(name = "generate_qr", nullable = false)
+    private Boolean generateQr = true;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -104,6 +113,11 @@ public class Area {
     public void setThreshold(Integer threshold) { this.threshold = threshold; }
     public Integer getCurrentCount() { return currentCount; }
     public void setCurrentCount(Integer currentCount) { this.currentCount = currentCount; }
+    public Boolean getGenerateQr() { return generateQr; }
+    public void setGenerateQr(Boolean generateQr) { this.generateQr = generateQr; }
+    public Event getEvent() { return event; }
+    public void setEvent(Event event) { this.event = event; }
+    public Long getEventId() { return event != null ? event.getId() : null; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

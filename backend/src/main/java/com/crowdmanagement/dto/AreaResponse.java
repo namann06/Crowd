@@ -16,11 +16,14 @@ public class AreaResponse {
     private Integer currentCount;
     private String status;
     private Double occupancyPercentage;
+    private Boolean generateQr;
+    private Long eventId;
 
     public AreaResponse() {}
 
     public AreaResponse(Long id, String name, Integer capacity, Integer threshold, 
-                       Integer currentCount, String status, Double occupancyPercentage) {
+                       Integer currentCount, String status, Double occupancyPercentage,
+                       Boolean generateQr, Long eventId) {
         this.id = id;
         this.name = name;
         this.capacity = capacity;
@@ -28,6 +31,8 @@ public class AreaResponse {
         this.currentCount = currentCount;
         this.status = status;
         this.occupancyPercentage = occupancyPercentage;
+        this.generateQr = generateQr;
+        this.eventId = eventId;
     }
 
     public static AreaResponse fromEntity(Area area) {
@@ -39,6 +44,8 @@ public class AreaResponse {
         response.setCurrentCount(area.getCurrentCount());
         response.setStatus(area.getStatus());
         response.setOccupancyPercentage(area.getOccupancyPercentage());
+        response.setGenerateQr(area.getGenerateQr());
+        response.setEventId(area.getEventId());
         return response;
     }
 
@@ -56,4 +63,8 @@ public class AreaResponse {
     public void setStatus(String status) { this.status = status; }
     public Double getOccupancyPercentage() { return occupancyPercentage; }
     public void setOccupancyPercentage(Double occupancyPercentage) { this.occupancyPercentage = occupancyPercentage; }
+    public Boolean getGenerateQr() { return generateQr; }
+    public void setGenerateQr(Boolean generateQr) { this.generateQr = generateQr; }
+    public Long getEventId() { return eventId; }
+    public void setEventId(Long eventId) { this.eventId = eventId; }
 }

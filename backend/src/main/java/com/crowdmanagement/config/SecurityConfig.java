@@ -64,6 +64,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/scans/**").permitAll()  // QR scan endpoints
                 .requestMatchers("/api/auth/**").permitAll()   // Auth endpoints
                 .requestMatchers("/api/areas/**").permitAll()  // Area management endpoints
+                .requestMatchers("/api/events/**").permitAll() // Event management endpoints
                 .requestMatchers("/oauth2/**").permitAll()     // OAuth2 endpoints
                 .requestMatchers("/login/**").permitAll()      // Login pages
                 .requestMatchers("/ws/**").permitAll()         // WebSocket endpoints
