@@ -10,9 +10,10 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js'
-import areaService from '../services/areaService'
+import eventService from '../services/eventService'
 import scanService from '../services/scanService'
 import LoadingSpinner from '../components/LoadingSpinner'
+import StatusBadge from '../components/StatusBadge'
 
 // Register Chart.js components
 ChartJS.register(
@@ -29,30 +30,38 @@ ChartJS.register(
  * Analytics Page
  * --------------
  * Apple-inspired minimalist analytics with monochrome charts.
+ * Areas are grouped by their parent events.
  */
 function Analytics() {
-  const [areas, setAreas] = useState([])
+  const [events, setEvents] = useState([])
   const [selectedAreaId, setSelectedAreaId] = useState(null)
   const [trendData, setTrendData] = useState([])
   const [prediction, setPrediction] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // Fetch areas
+  // Flatten all areas from events
+  const areas = events.flatMap(event => 
+    (event.areas || []).map(area => ({ ...area, eventName: event.name, eventId: event.id }))
+  )
+
+  // Fetch events with areas
   useEffect(() => {
-    const fetchAreas = async () => {
+    const fetchEvents = async () => {
       try {
-        const data = await areaService.getAllAreas()
-        setAreas(data)
-        if (data.length > 0) {
-          setSelectedAreaId(data[0].id)
+        const data = await eventService.getAllEvents()
+        setEvents(data)
+        // Select first area from first event
+        const allAreas = data.flatMap(e => e.areas || [])
+        if (allAreas.length > 0) {
+          setSelectedAreaId(allAreas[0].id)
         }
       } catch (err) {
-        console.error('Failed to fetch areas:', err)
+        console.error('Failed to fetch events:', err)
       } finally {
         setLoading(false)
       }
     }
-    fetchAreas()
+    fetchEvents()
   }, [])
 
   // Fetch trend data when area is selected
@@ -166,12 +175,16 @@ function Analytics() {
         <select
           value={selectedAreaId || ''}
           onChange={(e) => setSelectedAreaId(Number(e.target.value))}
-          className="input w-56"
+          className="input w-64"
         >
-          {areas.map((area) => (
-            <option key={area.id} value={area.id}>
-              {area.name}
-            </option>
+          {events.map((event) => (
+            <optgroup key={event.id} label={`${event.name} (${event.status})`}>
+              {(event.areas || []).map((area) => (
+                <option key={area.id} value={area.id}>
+                  {area.name}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
       </div>
@@ -239,27 +252,51 @@ function Analytics() {
         </div>
       </div>
 
-      {/* Heatmap Grid */}
+      {/* Heatmap Grid - Grouped by Events */}
       <div className="card">
         <h3 className="text-base font-semibold text-neutral-900 mb-2">Area Density</h3>
         <p className="text-sm text-neutral-500 mb-6">
           Intensity represents current occupancy level
         </p>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {areas.map((area) => (
-            <div
-              key={area.id}
-              className={`${getHeatIntensity(area)} rounded-xl p-4 transition-all hover:scale-[1.02] cursor-pointer`}
-              onClick={() => setSelectedAreaId(area.id)}
-            >
-              <h4 className="font-medium text-sm truncate">{area.name}</h4>
-              <p className="text-2xl font-semibold my-2 tracking-tight">{area.currentCount}</p>
-              <p className="text-xs opacity-75">
-                of {area.capacity} ({Math.round((area.currentCount / area.capacity) * 100)}%)
-              </p>
-            </div>
-          ))}
-        </div>
+        
+        {events.length === 0 ? (
+          <p className="text-center text-neutral-400 py-8">No events or areas available</p>
+        ) : (
+          <div className="space-y-6">
+            {events.map((event) => (
+              <div key={event.id}>
+                {/* Event Header */}
+                <div className="flex items-center gap-3 mb-3">
+                  <h4 className="text-sm font-medium text-neutral-700">{event.name}</h4>
+                  <StatusBadge status={event.status} size="small" />
+                </div>
+                
+                {/* Event Areas Grid */}
+                {(!event.areas || event.areas.length === 0) ? (
+                  <p className="text-sm text-neutral-400 pl-2">No areas in this event</p>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {event.areas.map((area) => (
+                      <div
+                        key={area.id}
+                        className={`${getHeatIntensity(area)} rounded-xl p-4 transition-all hover:scale-[1.02] cursor-pointer ${
+                          selectedAreaId === area.id ? 'ring-2 ring-neutral-900 ring-offset-2' : ''
+                        }`}
+                        onClick={() => setSelectedAreaId(area.id)}
+                      >
+                        <h4 className="font-medium text-sm truncate">{area.name}</h4>
+                        <p className="text-2xl font-semibold my-2 tracking-tight">{area.currentCount}</p>
+                        <p className="text-xs opacity-75">
+                          of {area.capacity} ({Math.round((area.currentCount / area.capacity) * 100)}%)
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Legend */}
         <div className="mt-6 flex items-center justify-center gap-3">
