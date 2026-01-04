@@ -10,9 +10,13 @@ C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\dto\Sc
 C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\entity\AdminUser.java
 C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\controller\ScanController.java
 C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\controller\AreaController.java
+C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\repository\EventRepository.java
 C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\repository\AdminUserRepository.java
 C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\config\SecurityConfig.java
 C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\entity\Area.java
+C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\service\EventService.java
+C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\entity\Event.java
+C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\controller\EventController.java
 C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\service\WebSocketService.java
 C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\entity\ScanLog.java
 C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\service\ScanService.java
@@ -20,6 +24,8 @@ C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\CrowdM
 C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\config\DataInitializer.java
 C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\controller\AuthController.java
 C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\dto\AreaRequest.java
+C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\dto\EventRequest.java
 C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\repository\ScanLogRepository.java
+C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\dto\EventResponse.java
 C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\dto\ScanResponse.java
 C:\Users\KIIT0001\Desktop\Crowd\backend\src\main\java\com\crowdmanagement\config\WebSocketConfig.java
