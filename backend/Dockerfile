@@ -23,5 +23,17 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
   CMD wget -q --spider http://localhost:8080/api/health || exit 1
 
 # Run the application with production profile
-# Transform DATABASE_URL to JDBC format by prepending jdbc:
-ENTRYPOINT ["sh", "-c", "java -Dspring.profiles.active=production -Dspring.datasource.url=jdbc:${DATABASE_URL} -jar app.jar"]
+# Parse DATABASE_URL and transform to JDBC format
+# Render format: postgresql://user:password@host/database
+# JDBC format: jdbc:postgresql://host/database with separate user/password
+ENTRYPOINT ["sh", "-c", "\
+  DB_USER=$(echo $DATABASE_URL | sed -e 's|postgresql://||' -e 's|:.*||'); \
+  DB_PASS=$(echo $DATABASE_URL | sed -e 's|postgresql://[^:]*:||' -e 's|@.*||'); \
+  DB_HOST=$(echo $DATABASE_URL | sed -e 's|postgresql://[^@]*@||'); \
+  JDBC_URL=\"jdbc:postgresql://${DB_HOST}\"; \
+  java -Dspring.profiles.active=production \
+       -Dspring.datasource.url=$JDBC_URL \
+       -Dspring.datasource.username=$DB_USER \
+       -Dspring.datasource.password=$DB_PASS \
+       -jar app.jar \
+"]
