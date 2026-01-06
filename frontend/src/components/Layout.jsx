@@ -105,8 +105,8 @@ function Layout({ onLogout, user }) {
               </svg>
             </div>
             <div>
-              <h1 className="text-base font-semibold text-neutral-900 tracking-tight">Crowd Control</h1>
-              <p className="text-xs text-neutral-500">Management</p>
+              <h1 className="text-base font-semibold text-neutral-900 tracking-tight">EventFlow</h1>
+              <p className="text-xs text-neutral-500">Crowd Control</p>
             </div>
           </div>
         </div>

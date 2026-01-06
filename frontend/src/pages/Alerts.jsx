@@ -193,7 +193,7 @@ function Alerts() {
             Alerts & Notifications
           </h1>
           <p className="text-sm text-neutral-500 mt-1">
-            Monitor threshold breaches and overcrowding alerts
+            Monitor threshold breaches and capacity alerts
           </p>
         </div>
         <button

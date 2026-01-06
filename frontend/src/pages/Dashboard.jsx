@@ -172,7 +172,7 @@ function Dashboard() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-neutral-900 tracking-tight">Dashboard</h1>
-          <p className="text-sm text-neutral-500 mt-1">Real-time crowd monitoring overview</p>
+          <p className="text-sm text-neutral-500 mt-1">Real-time event monitoring overview</p>
         </div>
         <div className="flex items-center gap-2 text-xs text-neutral-400">
           <span className={`w-2 h-2 rounded-full animate-pulse ${wsConnected ? 'bg-green-500' : 'bg-neutral-400'}`}></span>
@@ -227,9 +227,9 @@ function Dashboard() {
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Bar Chart - Crowd Count per Area */}
+        {/* Bar Chart - Attendance Count per Area */}
         <div className="lg:col-span-2 card">
-          <h3 className="text-base font-semibold text-neutral-900 mb-6">Crowd Distribution</h3>
+          <h3 className="text-base font-semibold text-neutral-900 mb-6">Attendance Distribution</h3>
           <div className="h-72">
             <Bar
               data={{

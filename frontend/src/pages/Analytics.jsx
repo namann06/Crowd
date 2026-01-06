@@ -170,7 +170,7 @@ function Analytics() {
       <div className="flex items-end justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-neutral-900 tracking-tight">Analytics</h1>
-          <p className="text-sm text-neutral-500 mt-1">Crowd trends and predictions</p>
+          <p className="text-sm text-neutral-500 mt-1">Event trends and predictions</p>
         </div>
         <select
           value={selectedAreaId || ''}
