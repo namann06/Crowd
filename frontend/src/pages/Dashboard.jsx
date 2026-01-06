@@ -47,10 +47,10 @@ function Dashboard() {
     (event.areas || []).map(area => ({ ...area, eventName: event.name, eventId: event.id }))
   )
 
-  // Fetch events data
+  // Fetch only live events data for dashboard
   const fetchEvents = async () => {
     try {
-      const data = await eventService.getAllEvents()
+      const data = await eventService.getLiveEvents()
       setEvents(data)
       setError(null)
     } catch (err) {
@@ -294,12 +294,13 @@ function Dashboard() {
         </div>
       </div>
 
-      {/* Areas Table - Grouped by Events */}
+      {/* Areas Table - Grouped by Live Events */}
       <div className="card">
-        <h3 className="text-base font-semibold text-neutral-900 mb-6">All Areas</h3>
+        <h3 className="text-base font-semibold text-neutral-900 mb-6">Live Event Areas</h3>
         {events.length === 0 ? (
           <div className="text-center py-8 text-neutral-500">
-            <p>No events or areas configured yet</p>
+            <p>No live events currently running</p>
+            <p className="text-sm mt-2">Dashboard will show data when an event goes live</p>
           </div>
         ) : (
           <div className="space-y-6">
