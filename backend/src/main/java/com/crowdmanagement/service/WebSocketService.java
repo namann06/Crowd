@@ -1,5 +1,6 @@
 package com.crowdmanagement.service;
 
+import com.crowdmanagement.dto.AlertResponse;
 import com.crowdmanagement.dto.AreaResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -44,6 +45,15 @@ public class WebSocketService {
     public void broadcastScanEvent(Long areaId, String scanType, Integer newCount) {
         var event = new ScanEvent(areaId, scanType, newCount);
         messagingTemplate.convertAndSend("/topic/scans", event);
+    }
+
+    /**
+     * Broadcast alert to all subscribed clients
+     * @param alert Alert data
+     */
+    public void broadcastAlert(AlertResponse alert) {
+        messagingTemplate.convertAndSend("/topic/alerts", alert);
+        messagingTemplate.convertAndSend("/topic/alerts/" + alert.getAreaId(), alert);
     }
 
     /**

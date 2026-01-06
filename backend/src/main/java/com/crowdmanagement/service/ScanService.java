@@ -35,6 +35,9 @@ public class ScanService {
     @Autowired
     private WebSocketService webSocketService;
 
+    @Autowired
+    private AlertService alertService;
+
     /**
      * Process a QR code scan (entry or exit)
      * @param request Scan details
@@ -56,6 +59,12 @@ public class ScanService {
         // Create scan log
         ScanLog scanLog = new ScanLog(area, request.getScanType());
         scanLog = scanLogRepository.save(scanLog);
+
+        // Refresh area entity to get updated count
+        area = areaService.getAreaEntityById(request.getAreaId());
+
+        // Check and generate alerts if thresholds are breached
+        alertService.checkAndGenerateAlert(area, request.getScanType());
 
         // Broadcast real-time update via WebSocket
         AreaResponse updatedArea = areaService.getAreaByIdPublic(request.getAreaId());
