@@ -1,4 +1,7 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import alertService from '../services/alertService'
+import websocketService from '../services/websocketService'
 
 /**
  * Layout Component
@@ -8,6 +11,43 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom'
  */
 function Layout({ onLogout, user }) {
   const navigate = useNavigate()
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  // Fetch unread alert count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const count = await alertService.getUnreadCount()
+        setUnreadCount(count)
+      } catch (err) {
+        console.error('Failed to fetch unread count:', err)
+      }
+    }
+
+    fetchUnreadCount()
+
+    // Subscribe to alerts for real-time updates
+    let subId = null
+    const setupWebSocket = async () => {
+      try {
+        await websocketService.connect()
+        subId = websocketService.subscribeToAlerts(() => {
+          setUnreadCount(prev => prev + 1)
+        })
+      } catch (err) {
+        console.error('WebSocket connection failed:', err)
+      }
+    }
+    setupWebSocket()
+
+    // Refresh count periodically
+    const interval = setInterval(fetchUnreadCount, 30000)
+
+    return () => {
+      clearInterval(interval)
+      if (subId) websocketService.unsubscribe(subId)
+    }
+  }, [])
 
   // Handle logout - clear all auth data
   const handleLogout = () => {
@@ -43,6 +83,11 @@ function Layout({ onLogout, user }) {
     { path: '/analytics', label: 'Analytics', icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 0 1 3 19.875v-6.75ZM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V8.625ZM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 0 1-1.125-1.125V4.125Z" />
+      </svg>
+    )},
+    { path: '/alerts', label: 'Alerts', icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0M3.124 7.5A8.969 8.969 0 0 1 5.292 3m13.416 0a8.969 8.969 0 0 1 2.168 4.5" />
       </svg>
     )},
   ]
@@ -82,7 +127,12 @@ function Layout({ onLogout, user }) {
                   }
                 >
                   {item.icon}
-                  <span>{item.label}</span>
+                  <span className="flex-1">{item.label}</span>
+                  {item.path === '/alerts' && unreadCount > 0 && (
+                    <span className="min-w-[20px] h-5 px-1.5 flex items-center justify-center text-xs font-semibold bg-red-500 text-white rounded-full">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
                 </NavLink>
               </li>
             ))}

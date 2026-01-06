@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard'
 import Events from './pages/Events'
 import Areas from './pages/Areas'
 import Analytics from './pages/Analytics'
+import Alerts from './pages/Alerts'
 import ScanPage from './pages/ScanPage'
 
 /**
@@ -108,6 +109,7 @@ function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="events" element={<Events />} />
           <Route path="areas" element={<Areas />} />
+          <Route path="alerts" element={<Alerts />} />
           <Route path="analytics" element={<Analytics />} />
         </Route>
 
