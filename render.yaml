@@ -32,7 +32,6 @@ services:
     runtime: static
     repo: https://github.com/namann06/Crowd.git
     rootDir: frontend
-    region: oregon
     plan: free
     buildCommand: npm install && npm run build
     staticPublishPath: dist
