@@ -23,4 +23,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
   CMD wget -q --spider http://localhost:8080/api/health || exit 1
 
 # Run the application with production profile
-ENTRYPOINT ["java", "-Dspring.profiles.active=production", "-jar", "app.jar"]
+# Transform DATABASE_URL to JDBC format by prepending jdbc:
+ENTRYPOINT ["sh", "-c", "java -Dspring.profiles.active=production -Dspring.datasource.url=jdbc:${DATABASE_URL} -jar app.jar"]
