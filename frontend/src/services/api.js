@@ -7,9 +7,19 @@ import axios from 'axios'
  * Base URL points to Spring Boot backend.
  */
 
+// Determine API base URL based on environment
+const getBaseUrl = () => {
+  // In production, use the environment variable
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL
+  }
+  // In development, use the Vite proxy
+  return '/api'
+}
+
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: '/api',  // Proxied to http://localhost:8080/api
+  baseURL: getBaseUrl(),
   timeout: 10000,   // 10 second timeout
   headers: {
     'Content-Type': 'application/json',

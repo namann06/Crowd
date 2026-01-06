@@ -27,8 +27,17 @@ export const connect = (onConnect, onError) => {
     return
   }
 
-  // Use the backend WebSocket endpoint
-  const wsUrl = '/ws'
+  // Use the backend WebSocket endpoint (use full URL in production)
+  const getWsUrl = () => {
+    if (import.meta.env.VITE_API_URL) {
+      // In production, construct WebSocket URL from API URL
+      const apiUrl = import.meta.env.VITE_API_URL
+      return apiUrl.replace('/api', '/ws')
+    }
+    return '/ws'
+  }
+  
+  const wsUrl = getWsUrl()
 
   stompClient = new Client({
     webSocketFactory: () => new SockJS(wsUrl),

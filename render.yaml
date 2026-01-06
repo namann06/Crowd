@@ -1,0 +1,49 @@
+# Render Blueprint - EventFlow Deployment
+# ========================================
+# This file configures automatic deployment from GitHub
+
+services:
+  # Backend - Spring Boot API
+  - type: web
+    name: eventflow-api
+    runtime: docker
+    repo: https://github.com/namann06/Crowd.git
+    rootDir: backend
+    region: oregon
+    plan: free
+    healthCheckPath: /api/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+      - key: BACKEND_URL
+        sync: false
+
+  # Frontend - React Vite
+  - type: web
+    name: eventflow-web
+    runtime: static
+    repo: https://github.com/namann06/Crowd.git
+    rootDir: frontend
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=0, must-revalidate
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        sync: false

@@ -61,6 +61,7 @@ public class SecurityConfig {
             // Configure authorization
             .authorizeHttpRequests(auth -> auth
                 // Public endpoints - no authentication required
+                .requestMatchers("/api/health").permitAll()    // Health check endpoint
                 .requestMatchers("/api/scans/**").permitAll()  // QR scan endpoints
                 .requestMatchers("/api/auth/**").permitAll()   // Auth endpoints
                 .requestMatchers("/api/areas/**").permitAll()  // Area management endpoints
