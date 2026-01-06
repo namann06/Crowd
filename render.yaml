@@ -2,6 +2,13 @@
 # ========================================
 # This file configures automatic deployment from GitHub
 
+databases:
+  # PostgreSQL Database (Free tier)
+  - name: eventflow-db
+    plan: free
+    databaseName: eventflow
+    user: eventflow_user
+
 services:
   # Backend - Spring Boot API
   - type: web
@@ -16,7 +23,9 @@ services:
       - key: SPRING_PROFILES_ACTIVE
         value: production
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: eventflow-db
+          property: connectionString
       - key: GOOGLE_CLIENT_ID
         sync: false
       - key: GOOGLE_CLIENT_SECRET

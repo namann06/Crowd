@@ -48,6 +48,13 @@
             <scope>runtime</scope>
         </dependency>
         
+        <!-- PostgreSQL Database (for Render deployment) -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        
         <!-- Validation - for validating request data -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
