@@ -138,6 +138,15 @@ export const subscribeToScans = (callback) => {
 }
 
 /**
+ * Subscribe to alert events
+ * @param {Function} callback Callback with alert event data
+ * @returns {string} Subscription ID for unsubscribing
+ */
+export const subscribeToAlerts = (callback) => {
+  return subscribe('/topic/alerts', callback)
+}
+
+/**
  * Generic subscribe function
  * @param {string} topic Topic to subscribe to
  * @param {Function} callback Callback with message data
@@ -189,6 +198,7 @@ export default {
   subscribeToAllAreas,
   subscribeToAreasAll,
   subscribeToScans,
+  subscribeToAlerts,
   unsubscribe,
   isConnected
 }
