@@ -6,7 +6,10 @@ EventFlow is a crowd management system designed to monitor, control, and optimiz
 The system focuses on safety, efficiency, and real-time monitoring by tracking crowd density, identifying congestion points, and alerting authorities when predefined limits are exceeded.
 
 This project is developed as a solo project with a scalable architecture, making it suitable for both academic evaluation and real-world deployment.
+### 🌐 Live Demo
+[Visit Live Site](https://eventflow-web.onrender.com)
 
+---
 ## Objectives
 
 - Monitor crowd density across different zones
