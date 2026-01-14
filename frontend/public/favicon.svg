@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <!-- Background circle -->
+  <circle cx="50" cy="50" r="48" fill="url(#bgGradient)"/>
+  <!-- People icons representing crowd -->
+  <g fill="white">
+    <!-- Center person (larger) -->
+    <circle cx="50" cy="32" r="8"/>
+    <path d="M38 52 Q38 42 50 42 Q62 42 62 52 L62 58 Q62 62 58 62 L42 62 Q38 62 38 58 Z"/>
+    <!-- Left person -->
+    <circle cx="28" cy="38" r="6"/>
+    <path d="M20 54 Q20 46 28 46 Q36 46 36 54 L36 58 Q36 61 33 61 L23 61 Q20 61 20 58 Z"/>
+    <!-- Right person -->
+    <circle cx="72" cy="38" r="6"/>
+    <path d="M64 54 Q64 46 72 46 Q80 46 80 54 L80 58 Q80 61 77 61 L67 61 Q64 61 64 58 Z"/>
+    <!-- Flow lines at bottom -->
+    <rect x="25" y="70" width="50" height="3" rx="1.5"/>
+    <rect x="30" y="76" width="40" height="3" rx="1.5"/>
+    <rect x="35" y="82" width="30" height="3" rx="1.5"/>
+  </g>
+</svg>
