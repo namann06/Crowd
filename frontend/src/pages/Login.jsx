@@ -12,6 +12,7 @@ function Login({ onLogin }) {
   const navigate = useNavigate()
   const [error, setError] = useState('')
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [loadingMessage, setLoadingMessage] = useState('Connecting...')
 
   // Check if already logged in
   useEffect(() => {
@@ -72,17 +73,54 @@ function Login({ onLogin }) {
 
   const handleGoogleLogin = async () => {
     setGoogleLoading(true)
+    setError('')
+    setLoadingMessage('Connecting...')
+    
     try {
       localStorage.removeItem('isAuthenticated')
       localStorage.removeItem('userEmail')
       localStorage.removeItem('userName')
       localStorage.removeItem('authProvider')
       
-      const { url } = await authService.getGoogleAuthUrl()
-      window.location.href = url
+      // Retry logic for cold start scenarios (Render free tier)
+      let attempts = 0
+      const maxAttempts = 3
+      let lastError = null
+      
+      while (attempts < maxAttempts) {
+        try {
+          const { url } = await authService.getGoogleAuthUrl()
+          setLoadingMessage('Redirecting to Google...')
+          window.location.href = url
+          return
+        } catch (err) {
+          lastError = err
+          attempts++
+          if (attempts < maxAttempts) {
+            setLoadingMessage(`Server waking up... (attempt ${attempts + 1}/${maxAttempts})`)
+            // Wait before retrying (increasing delay)
+            await new Promise(resolve => setTimeout(resolve, 2000 * attempts))
+          }
+        }
+      }
+      
+      // All attempts failed
+      console.error('Google login error:', lastError)
+      if (lastError?.response?.status === 500) {
+        setError('Server error. Please try again in a moment.')
+      } else if (lastError?.code === 'ECONNABORTED' || lastError?.message?.includes('timeout')) {
+        setError('Server is waking up. Please wait a moment and try again.')
+      } else if (!navigator.onLine) {
+        setError('No internet connection. Please check your network.')
+      } else {
+        setError('Failed to connect to server. Please try again.')
+      }
     } catch (err) {
-      setError('Failed to initiate Google login')
+      console.error('Unexpected error:', err)
+      setError('An unexpected error occurred. Please try again.')
+    } finally {
       setGoogleLoading(false)
+      setLoadingMessage('Connecting...')
     }
   }
 
@@ -123,7 +161,7 @@ function Login({ onLogin }) {
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
           )}
-          {googleLoading ? 'Connecting...' : 'Continue with Google'}
+          {googleLoading ? loadingMessage : 'Continue with Google'}
         </button>
 
         {/* Footer */}
