@@ -81,12 +81,23 @@ function Events() {
     setShowModal(true)
   }
 
+  // Convert a UTC datetime string (no Z suffix) to local date/time parts for <input> fields
+  const utcToLocalParts = (utcStr) => {
+    if (!utcStr) return { date: '', time: '' }
+    const d = new Date(utcStr + 'Z') // append Z so browser treats it as UTC
+    const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const time = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+    return { date, time }
+  }
+
   // Open edit modal
   const handleEdit = (event) => {
-    const eventDate = event.eventDateTime ? event.eventDateTime.split('T')[0] : ''
-    const eventTime = event.eventDateTime ? event.eventDateTime.split('T')[1]?.substring(0, 5) : ''
-    const endDate = event.endDateTime ? event.endDateTime.split('T')[0] : ''
-    const endTime = event.endDateTime ? event.endDateTime.split('T')[1]?.substring(0, 5) : ''
+    const evParts = utcToLocalParts(event.eventDateTime)
+    const endParts = utcToLocalParts(event.endDateTime)
+    const eventDate = evParts.date
+    const eventTime = evParts.time
+    const endDate = endParts.date
+    const endTime = endParts.time
 
     setFormData({
       name: event.name || '',
@@ -197,9 +208,11 @@ function Events() {
         name: formData.name.trim(),
         description: formData.description.trim(),
         venue: formData.venue.trim(),
-        eventDateTime: `${formData.eventDate}T${formData.eventTime}:00`,
-        endDateTime: formData.endDate && formData.endTime 
-          ? `${formData.endDate}T${formData.endTime}:00` 
+        // Convert local datetime to UTC before sending so the deployed server
+        // (running in UTC) compares against the same timezone as stored values.
+        eventDateTime: new Date(`${formData.eventDate}T${formData.eventTime}:00`).toISOString().slice(0, 19),
+        endDateTime: formData.endDate && formData.endTime
+          ? new Date(`${formData.endDate}T${formData.endTime}:00`).toISOString().slice(0, 19)
           : null,
         areas: formData.areas.map(area => ({
           name: area.name.trim(),
@@ -239,7 +252,9 @@ function Events() {
   // Format date for display
   const formatDateTime = (dateTimeStr) => {
     if (!dateTimeStr) return ''
-    const date = new Date(dateTimeStr)
+    // Append 'Z' so the browser interprets the UTC string correctly and
+    // toLocaleString() converts it to the user's local timezone for display.
+    const date = new Date(dateTimeStr + 'Z')
     return date.toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',

@@ -6,15 +6,11 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Event Entity
- * ------------
- * Represents an event that contains multiple areas.
- * Events have a start/end date and can be live, upcoming, or completed.
- */
+
 @Entity
 @Table(name = "events", uniqueConstraints = {
     @UniqueConstraint(columnNames = {"name", "owner_email"})
@@ -62,13 +58,13 @@ public class Event {
 
     @PrePersist
     protected void onCreate() {
-        createdAt = LocalDateTime.now();
-        updatedAt = LocalDateTime.now();
+        createdAt = LocalDateTime.now(ZoneOffset.UTC);
+        updatedAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now(ZoneOffset.UTC);
     }
 
     /**
@@ -79,7 +75,7 @@ public class Event {
      */
     @Transient
     public String getStatus() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         if (now.isBefore(eventDateTime)) {
             return "UPCOMING";
         } else if (endDateTime != null && now.isAfter(endDateTime)) {

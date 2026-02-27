@@ -10,15 +10,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Event Service
- * -------------
- * Business logic for event management.
- * Multi-tenant: All operations are scoped to the owner's email.
- */
+
 @Service
 public class EventService {
 
@@ -39,7 +35,7 @@ public class EventService {
      * Get live events (currently active)
      */
     public List<EventResponse> getLiveEvents(String ownerEmail) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         return eventRepository.findLiveEvents(ownerEmail, now)
                 .stream()
                 .map(EventResponse::fromEntity)
@@ -50,7 +46,7 @@ public class EventService {
      * Get upcoming events (not started yet)
      */
     public List<EventResponse> getUpcomingEvents(String ownerEmail) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         return eventRepository.findUpcomingEvents(ownerEmail, now)
                 .stream()
                 .map(EventResponse::fromEntity)
@@ -61,7 +57,7 @@ public class EventService {
      * Get completed events (ended)
      */
     public List<EventResponse> getCompletedEvents(String ownerEmail) {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         LocalDateTime dayAgo = now.minusHours(24);
         return eventRepository.findCompletedEvents(ownerEmail, now, dayAgo)
                 .stream()

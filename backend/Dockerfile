@@ -23,17 +23,18 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
   CMD wget -q --spider http://localhost:8080/api/health || exit 1
 
 # Run the application with production profile
-# Parse DATABASE_URL and transform to JDBC format
-# Supports both Render (postgres://) and Neon (postgresql://) formats
-# Example: postgres://user:password@host:port/database?sslmode=require
+# Robustly parse DATABASE_URL for Neon/Render (handles query params, any format)
+# Example: postgresql://user:password@host:port/database?params
 ENTRYPOINT ["sh", "-c", "\
-  DB_URL=$(echo $DATABASE_URL | sed 's|^postgres://|postgresql://|'); \
-  DB_USER=$(echo $DB_URL | sed -n 's|^postgresql://\\([^:]*\\):.*|\\1|p'); \
-  DB_PASS=$(echo $DB_URL | sed -n 's|^postgresql://[^:]*:\\([^@]*\\)@.*|\\1|p'); \
-  DB_HOST_PORT_DB=$(echo $DB_URL | sed -n 's|^postgresql://[^@]*@\\([^?]*\\).*|\\1|p'); \
-  DB_PARAMS=$(echo $DB_URL | grep -o '?.*' || echo ''); \
-  JDBC_URL=\"jdbc:postgresql://${DB_HOST_PORT_DB}${DB_PARAMS}\"; \
-  echo \"Connecting to database at: ${DB_HOST_PORT_DB}\"; \
+  DB_URL=\"$DATABASE_URL\"; \
+  DB_USER=$(echo $DB_URL | awk -F[/:@] '{print $4}'); \
+  DB_PASS=$(echo $DB_URL | awk -F[/:@] '{print $5}'); \
+  DB_HOST=$(echo $DB_URL | awk -F[/:@] '{print $6}'); \
+  DB_PORT_DB=$(echo $DB_URL | awk -F[/:@] '{print $7}'); \
+  DB_DB=$(echo $DB_PORT_DB | awk -F'[/?]' '{print $1}'); \
+  DB_PARAMS=$(echo $DB_URL | grep -o '\?.*' || echo ''); \
+  JDBC_URL=\"jdbc:postgresql://${DB_HOST}/${DB_DB}${DB_PARAMS}\"; \
+  echo \"Connecting to database at: ${DB_HOST}/${DB_DB}${DB_PARAMS}\"; \
   java -Dspring.profiles.active=production \
        -Dspring.datasource.url=\"$JDBC_URL\" \
        -Dspring.datasource.username=\"$DB_USER\" \

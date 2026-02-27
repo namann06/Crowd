@@ -3,19 +3,16 @@ package com.crowdmanagement;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-/**
- * Main Application Class
- * -----------------------
- * This is the entry point for the Spring Boot application.
- * The @SpringBootApplication annotation combines:
- * - @Configuration: Tags the class as a source of bean definitions
- * - @EnableAutoConfiguration: Tells Spring Boot to start adding beans
- * - @ComponentScan: Tells Spring to scan for components in this package
- */
+import java.util.TimeZone;
+
+
 @SpringBootApplication
 public class CrowdManagementApplication {
 
     public static void main(String[] args) {
+        // Force UTC timezone for the entire JVM so event time comparisons
+        // behave identically on local dev machines and deployed servers.
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         SpringApplication.run(CrowdManagementApplication.class, args);
         System.out.println("===========================================");
         System.out.println("Crowd Management System Backend Started!");
