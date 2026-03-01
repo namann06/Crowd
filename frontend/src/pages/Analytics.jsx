@@ -50,8 +50,8 @@ function Analytics() {
       try {
         const data = await eventService.getAllEvents()
         setEvents(data)
-        // Select first area from first event
-        const allAreas = data.flatMap(e => e.areas || [])
+        // Select first area from first LIVE event
+        const allAreas = data.filter(e => e.status === 'LIVE').flatMap(e => e.areas || [])
         if (allAreas.length > 0) {
           setSelectedAreaId(allAreas[0].id)
         }
@@ -177,8 +177,8 @@ function Analytics() {
           onChange={(e) => setSelectedAreaId(Number(e.target.value))}
           className="input w-64"
         >
-          {events.map((event) => (
-            <optgroup key={event.id} label={`${event.name} (${event.status})`}>
+          {events.filter(e => e.status === 'LIVE').map((event) => (
+            <optgroup key={event.id} label={`${event.name} (LIVE)`}>
               {(event.areas || []).map((area) => (
                 <option key={area.id} value={area.id}>
                   {area.name}
@@ -256,14 +256,14 @@ function Analytics() {
       <div className="card">
         <h3 className="text-base font-semibold text-neutral-900 mb-2">Area Density</h3>
         <p className="text-sm text-neutral-500 mb-6">
-          Intensity represents current occupancy level
+          Intensity represents current occupancy level — live events only
         </p>
         
-        {events.length === 0 ? (
-          <p className="text-center text-neutral-400 py-8">No events or areas available</p>
+        {events.filter(e => e.status === 'LIVE').length === 0 ? (
+          <p className="text-center text-neutral-400 py-8">No live events or areas available</p>
         ) : (
           <div className="space-y-6">
-            {events.map((event) => (
+            {events.filter(e => e.status === 'LIVE').map((event) => (
               <div key={event.id}>
                 {/* Event Header */}
                 <div className="flex items-center gap-3 mb-3">
