@@ -156,10 +156,11 @@ public class EventService {
         event.setEventDateTime(request.getEventDateTime());
         event.setEndDateTime(request.getEndDateTime());
 
-        // Update areas - clear and re-add (simple approach)
-        // Note: This will reset currentCount for existing areas
+        // Clear existing areas and flush immediately so the DELETE SQL runs
+        // before the INSERT SQL for new areas, avoiding the unique constraint violation.
         event.getAreas().clear();
-        
+        eventRepository.saveAndFlush(event);
+
         if (request.getAreas() != null) {
             for (EventRequest.AreaInput areaInput : request.getAreas()) {
                 if (areaInput.getThreshold() > areaInput.getCapacity()) {
